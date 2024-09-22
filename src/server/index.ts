@@ -2,7 +2,9 @@ import { Server } from 'socket.io'
 import { createServer } from 'http'
 import sequelize from '../config/db'
 import User from '../models/User'
-sequelize.sync({ force: true }).then(() => {
+import Lobby from '../models/Lobby'
+sequelize.sync({}).then(() => {
+  // force: true убрал
   console.log('Database & tables created!')
 })
 
@@ -15,6 +17,7 @@ const io = new Server(httpServer, {
 
 //bot
 import TelegramBot from 'node-telegram-bot-api'
+// import { USE } from 'sequelize/lib/index-hints'
 
 const webAppUrl = 'https://client.ru.tuna.am'
 
@@ -40,13 +43,6 @@ bot.on('message', async (msg) => {
 
 //server
 
-type Lobby = {
-  code: string
-  players: string[]
-}
-
-const lobbies: { [key: string]: Lobby } = {}
-
 const generateLobbyCode = () => {
   return Math.random().toString(36).substring(2, 7).toUpperCase()
 }
@@ -54,60 +50,87 @@ const generateLobbyCode = () => {
 io.on('connection', (socket) => {
   console.log('a user connected', socket.id)
 
-  // await User.findOne({where:{telegramId:id}})
-
-  socket.on('userEnter', async ([id, nick]) => {
+  socket.on('userEnter', async ([telegramId, nick]) => {
     try {
-      await User.create({ telegramId: id, nick, coins: 0 })
+      await User.findOrCreate({
+        where: { telegramId },
+        defaults: { nick, coins: 0 },
+      })
+      await User.update(
+        { socket: socket.id, lobbyCode: null },
+        { where: { telegramId } }
+      )
     } catch (e) {
       console.log(e)
     }
   })
 
-  // socket.on('createLobby', () => {
-  //   const code = generateLobbyCode()
-  //   lobbies[code] = { code, players: [socket.id] }
+  socket.on('createLobby', async () => {
+    const code = generateLobbyCode()
+    try {
+      await Lobby.create({ lobbyCode: code })
+      await User.update({ lobbyCode: code }, { where: { socket: socket.id } })
+      console.log(await User.findOne({ where: { socket: socket.id } }))
+      console.log('lobby created ', code, typeof code)
+      console.log(await Lobby.findOne({ where: { lobbyCode: code } }))
+      console.log(
+        (await Lobby.findOne({ where: { lobbyCode: code } })) ? 'yes' : 'no'
+      )
+    } catch (e) {
+      console.log(e)
+    }
 
-  //   socket.join(code)
-  //   console.log(`join to ${code}`)
-  //   console.log(lobbies[code])
-  //   socket.emit('lobbyCreated', code)
-  //   io.to(code).emit('updatePlayers', lobbies[code].players)
-  // })
-  socket.on('createLobby', () => {
-    const code = generateLobbyCode() // Generate the lobby code
-    lobbies[code] = { code, players: [socket.id] } // Add the lobby to memory with one socket ID
+    socket.join(code)
+    socket.emit('lobbyCreated', code)
 
-    socket.join(code) // Join the lobby
-    socket.emit('lobbyCreated', code) // Send the lobby code back to the client
+    const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
+    const arrOfNicks = playersInLobby.map((user) => user.nick)
 
-    // Emit the player list to all clients in the lobby
-    io.to(code).emit('updatePlayers', lobbies[code].players)
+    io.to(code).emit('updatePlayers', arrOfNicks)
   })
 
-  socket.on('joinLobby', (code) => {
-    if (lobbies[code]) {
-      // Only add the socket if it is not already in the players list
-      if (!lobbies[code].players.includes(socket.id)) {
-        lobbies[code].players.push(socket.id)
+  socket.on('joinLobby', async (code) => {
+    console.log(code, typeof code)
+    if (await Lobby.findOne({ where: { lobbyCode: code } })) {
+      if (
+        await User.findOne({
+          where: { socket: socket.id, lobbyCode: null }, //, lobbyCode: null
+        })
+      ) {
+        console.log('user finded!')
+        await User.update({ lobbyCode: code }, { where: { socket: socket.id } })
       }
       socket.join(code)
-      io.to(code).emit('updatePlayers', lobbies[code].players) // Emit player updates
+      const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
+      const arrOfNicks = playersInLobby.map((user) => user.nick)
+      io.to(code).emit('updatePlayers', arrOfNicks)
     }
   })
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log('user disconnected', socket.id)
-    for (const code in lobbies) {
-      const lobby = lobbies[code]
-      const index = lobby.players.indexOf(socket.id)
-      if (index !== -1) {
-        lobby.players.splice(index, 1)
-        io.to(code).emit('updatePlayers', lobby.players)
+    const disconectedUser = {
+      ...(await User.findOne({ where: { socket: socket.id } }))?.dataValues,
+    }
+    const disconectedLobbyCode = disconectedUser.lobbyCode
 
-        if (lobby.players.length === 0) {
-          delete lobbies[code]
-        }
+    await User.update({ lobbyCode: null }, { where: { socket: socket.id } })
+    const playersInLobby = await User.findAll({
+      where: { lobbyCode: disconectedLobbyCode },
+    })
+
+    const arrOfNicks = playersInLobby.map((user) => user.nick)
+
+    if (
+      (await User.findAll({
+        where: { lobbyCode: disconectedLobbyCode },
+      }).then((users) => users.length === 0)) &&
+      disconectedLobbyCode
+    ) {
+      await Lobby.destroy({ where: { lobbyCode: disconectedLobbyCode } })
+    } else {
+      if (disconectedLobbyCode) {
+        io.to(disconectedLobbyCode).emit('updatePlayers', arrOfNicks)
       }
     }
   })

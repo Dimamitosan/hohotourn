@@ -5,7 +5,7 @@ interface UserAttributes {
   id: number
   nick: string
   coins?: number
-  lobbyCode?: string
+  lobbyCode?: string | null
   telegramId?: string
   socket?: string
 }
@@ -19,7 +19,7 @@ class User
   public id!: number
   public nick!: string
   public coins!: number
-  public lobbyCode!: string
+  public lobbyCode?: string | null
   public telegramId!: string
   public socket?: string
 }
@@ -56,5 +56,5 @@ User.init(
     timestamps: false,
   }
 )
-// User.belongsTo(Lobby, { foreignKey: 'fk_user_lobby', targetKey: 'lobbyCode' })
+
 export default User
