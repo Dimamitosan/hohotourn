@@ -2,42 +2,35 @@
   "name": "template-webapp",
   "version": "0.1.0",
   "private": true,
-  "author": {
-    "name": "refreak",
-    "url": "https://t.me/thismisterit",
-    "email": "dimkaboin@yandex.ru"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "generate": "drizzle-kit generate:pg",
-    "push": "drizzle-kit push:pg"
+    "lint": "next lint"
   },
   "dependencies": {
     "@next/bundle-analyzer": "^14.2.3",
     "@tanstack/react-query": "^5.40.0",
-    "axios": "^1.7.2",
-    "crypto": "^1.0.1",
-    "drizzle-orm": "^0.30.8",
+    "mysql2": "^3.11.3",
     "next": "14.2.1",
-    "pg": "^8.11.5",
-    "postgres": "^3.4.4",
+    "node-telegram-bot-api": "^0.66.0",
     "react": "^18",
     "react-dom": "^18",
-    "sass": "^1.75.0"
+    "sequelize": "^6.37.3",
+    "sequelize-cli": "^6.6.2",
+    "sequelize-typescript": "^2.1.6",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
+    "tsx": "^4.19.1"
   },
   "devDependencies": {
     "@tanstack/eslint-plugin-query": "^5.35.6",
     "@types/node": "^20",
+    "@types/node-telegram-bot-api": "^0.64.7",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "drizzle-kit": "^0.20.14",
     "eslint": "^8",
     "eslint-config-next": "14.2.1",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
     "telegram-webapps-types-new": "^1.2.0",
     "typescript": "^5"
   }
