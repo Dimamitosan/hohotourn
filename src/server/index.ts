@@ -54,7 +54,7 @@ io.on('connection', (socket) => {
     try {
       await User.findOrCreate({
         where: { telegramId },
-        defaults: { nick, coins: 0 },
+        defaults: { nick, coins: 0, score: 0 },
       })
       await User.update(
         { socket: socket.id, lobbyCode: null },
@@ -68,14 +68,12 @@ io.on('connection', (socket) => {
   socket.on('createLobby', async () => {
     const code = generateLobbyCode()
     try {
-      await Lobby.create({ lobbyCode: code })
-      await User.update({ lobbyCode: code }, { where: { socket: socket.id } })
-      console.log(await User.findOne({ where: { socket: socket.id } }))
-      console.log('lobby created ', code, typeof code)
-      console.log(await Lobby.findOne({ where: { lobbyCode: code } }))
-      console.log(
-        (await Lobby.findOne({ where: { lobbyCode: code } })) ? 'yes' : 'no'
+      await Lobby.create({ lobbyCode: code, gameStarted: false })
+      await User.update(
+        { lobbyCode: code, lobbyLeader: true },
+        { where: { socket: socket.id } }
       )
+      socket.join(code)
     } catch (e) {
       console.log(e)
     }
@@ -89,8 +87,18 @@ io.on('connection', (socket) => {
     io.to(code).emit('updatePlayers', arrOfNicks)
   })
 
+  socket.on('getScores', async (code) => {
+    try {
+      const users = await User.findAll({ where: { lobbyCode: code } })
+      const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
+      socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
+    } catch (e) {
+      console.log(e)
+    }
+  })
+
   socket.on('joinLobby', async (code) => {
-    console.log(code, typeof code)
+    socket.join(code)
     if (await Lobby.findOne({ where: { lobbyCode: code } })) {
       if (
         await User.findOne({
@@ -98,12 +106,44 @@ io.on('connection', (socket) => {
         })
       ) {
         console.log('user finded!')
-        await User.update({ lobbyCode: code }, { where: { socket: socket.id } })
+        await User.update(
+          { lobbyCode: code, lobbyLeader: false },
+          { where: { socket: socket.id } }
+        )
       }
       socket.join(code)
+      socket.emit(
+        'findLobbyLeader',
+        await User.findOne({ where: { socket: socket.id } }).then(
+          (user) => user?.lobbyLeader
+        )
+      )
       const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
       const arrOfNicks = playersInLobby.map((user) => user.nick)
       io.to(code).emit('updatePlayers', arrOfNicks)
+    }
+  })
+
+  socket.on('startGame', (lobbyData) => {
+    const { code } = lobbyData
+    io.to(code).emit('startGame') // Уведомляем всех участников лобби
+  })
+
+  let timerValue = 2
+  socket.emit('timerUpdate', timerValue)
+
+  socket.on('startTimer', (code) => {
+    if (timerValue === 2) {
+      const intervalId = setInterval(() => {
+        timerValue--
+        io.to(code).emit('timerUpdate', timerValue) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
+
+        // Остановка таймера, когда он достигает 0
+        if (timerValue <= 0) {
+          clearInterval(intervalId)
+          timerValue = 2 // Сбрасываем таймер
+        }
+      }, 1000)
     }
   })
 
@@ -114,7 +154,10 @@ io.on('connection', (socket) => {
     }
     const disconectedLobbyCode = disconectedUser.lobbyCode
 
-    await User.update({ lobbyCode: null }, { where: { socket: socket.id } })
+    await User.update(
+      { lobbyCode: null, lobbyLeader: null },
+      { where: { socket: socket.id } }
+    )
     const playersInLobby = await User.findAll({
       where: { lobbyCode: disconectedLobbyCode },
     })

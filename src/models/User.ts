@@ -8,6 +8,8 @@ interface UserAttributes {
   lobbyCode?: string | null
   telegramId?: string
   socket?: string
+  lobbyLeader?: boolean | null
+  score: number
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
@@ -22,6 +24,8 @@ class User
   public lobbyCode?: string | null
   public telegramId!: string
   public socket?: string
+  public lobbyLeader?: boolean | null
+  public score!: number
 }
 
 User.init(
@@ -48,6 +52,13 @@ User.init(
     },
     socket: {
       type: new DataTypes.STRING(),
+    },
+    lobbyLeader: {
+      type: DataTypes.BOOLEAN,
+    },
+    score: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
   },
   {

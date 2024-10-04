@@ -3,6 +3,7 @@ import sequelize from '../config/db'
 
 interface LobbyAttributes {
   lobbyCode: string
+  gameStarted: boolean
 }
 
 interface LobbyCreationAttributes
@@ -13,6 +14,7 @@ class Lobby
   implements LobbyAttributes
 {
   public lobbyCode!: string
+  public gameStarted!: boolean
 }
 
 Lobby.init(
@@ -22,6 +24,10 @@ Lobby.init(
       primaryKey: true,
       allowNull: false,
       unique: true,
+    },
+    gameStarted: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
     },
   },
   {
