@@ -41,7 +41,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
       socket.on('startGame', () => {
         setIsGameStarted(true)
-        console.log('start2')
+
         router.push(`/game/${code}`)
       })
 
@@ -55,7 +55,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
     socket.on('timerUpdate', (newTime: number) => {
       setTimer(newTime)
       if (newTime === 0) {
-        socket.emit('startGame', { code })
+        socket.emit('startGame', code)
       }
     })
 

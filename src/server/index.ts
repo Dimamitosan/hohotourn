@@ -1,11 +1,19 @@
 import { Server } from 'socket.io'
 import { createServer } from 'http'
 import sequelize from '../config/db'
-import User from '../models/User'
-import Lobby from '../models/Lobby'
-import dotenv from 'dotenv'
-
-dotenv.config({ path: '../../.env' })
+import {
+  createLobby,
+  getScores,
+  startTimer,
+  disconnect,
+  timerValue,
+  startGame,
+} from './controllers/lobbyController'
+import {
+  joinLobby,
+  checkLobbyIsFull,
+  userEnter,
+} from './controllers/joinControllers'
 
 sequelize.sync({}).then(() => {
   // force: true убрал
@@ -19,208 +27,32 @@ export const io = new Server(httpServer, {
   },
 })
 
-//bot
-import TelegramBot from 'node-telegram-bot-api'
-import { where } from 'sequelize'
-// import { USE } from 'sequelize/lib/index-hints'
-
-const webAppUrl = 'https://client.ru.tuna.am'
-
-const token = process.env.BOT_TOKEN
-
-if (!token) {
-  console.log('Процесс окружения:', process.env)
-  console.log('token -', token)
-  throw Error('token не найден!')
-}
-
-const bot = new TelegramBot(token, { polling: true })
-
-bot.on('message', async (msg) => {
-  // ПОМЕНЯТЬ ТИП msg
-
-  const chatId = msg.chat.id
-  const text = msg.text
-
-  if (text === '/start') {
-    await bot.sendMessage(chatId, 'Для игры нажмите кнопку ниже', {
-      reply_markup: {
-        inline_keyboard: [[{ text: 'играть', web_app: { url: webAppUrl } }]],
-      },
-    })
-  }
-  bot.sendMessage(chatId, 'Received your message')
-})
-
 //server
-
-const generateLobbyCode = () => {
-  return Math.random().toString(36).substring(2, 7).toUpperCase()
-}
 
 io.on('connection', (socket) => {
   console.log('a user connected', socket.id)
 
-  socket.on('userEnter', async ([telegramId, nick]) => {
-    try {
-      await User.findOrCreate({
-        where: { telegramId },
-        defaults: { nick, coins: 0, score: 0 },
-      })
-      await User.update(
-        { socket: socket.id, lobbyCode: null },
-        { where: { telegramId } }
-      )
-    } catch (e) {
-      console.log(e)
-    }
-  })
+  socket.on('userEnter', ([telegramId, nick]) =>
+    userEnter(socket, [telegramId, nick])
+  )
 
-  socket.on('createLobby', async (countOfPlayers) => {
-    const code = generateLobbyCode()
-    try {
-      await Lobby.create({
-        lobbyCode: code,
-        gameStarted: false,
-        maxPlayers: countOfPlayers,
-      })
-      await User.update(
-        { lobbyCode: code, lobbyLeader: true },
-        { where: { socket: socket.id } }
-      )
-      socket.join(code)
-    } catch (e) {
-      console.log(e)
-    }
+  socket.on('createLobby', (countOfPlayers) =>
+    createLobby(socket, countOfPlayers)
+  )
 
-    socket.join(code)
-    socket.emit('lobbyCreated', code)
+  socket.on('joinLobby', (code) => joinLobby(socket, code))
 
-    const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
-    const arrOfNicks = playersInLobby.map((user) => user.nick)
+  socket.on('startTimer', (code) => startTimer(socket, code))
 
-    io.to(code).emit('updatePlayers', arrOfNicks)
-  })
+  socket.on('startGame', (code) => startGame(socket, code))
 
-  socket.on('getScores', async (code) => {
-    try {
-      const users = await User.findAll({ where: { lobbyCode: code } })
-      const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
-      socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
-    } catch (e) {
-      console.log(e)
-    }
-  })
-
-  socket.on('joinLobby', async (code) => {
-    socket.join(code)
-    if (await Lobby.findOne({ where: { lobbyCode: code } })) {
-      if (
-        await User.findOne({
-          where: { socket: socket.id, lobbyCode: null }, //, lobbyCode: null
-        })
-      ) {
-        console.log('user finded!')
-        await User.update(
-          { lobbyCode: code, lobbyLeader: false },
-          { where: { socket: socket.id } }
-        )
-      }
-      socket.join(code)
-      socket.emit(
-        'findLobbyLeader',
-        await User.findOne({ where: { socket: socket.id } }).then(
-          (user) => user?.lobbyLeader
-        )
-      )
-      try {
-        const lobbyInfo = await Lobby?.findOne({ where: { lobbyCode: code } })
-        const maxPlayers = lobbyInfo?.maxPlayers
-
-        io.to(code).emit('updateLobbyInfo', maxPlayers)
-      } catch (e) {
-        console.log(e)
-      }
-
-      const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
-      const arrOfNicks = playersInLobby.map((user) => user.nick)
-      io.to(code).emit('updatePlayers', arrOfNicks)
-    }
-  })
-
-  socket.on('startGame', (lobbyData) => {
-    const { code } = lobbyData
-    io.to(code).emit('startGame') // Уведомляем всех участников лобби
-  })
-
-  let timerValue = 2
   socket.emit('timerUpdate', timerValue)
 
-  socket.on('startTimer', (code) => {
-    if (timerValue === 2) {
-      const intervalId = setInterval(() => {
-        timerValue--
-        io.to(code).emit('timerUpdate', timerValue) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
+  socket.on('getScores', (code) => getScores(socket, code))
 
-        // Остановка таймера, когда он достигает 0
-        if (timerValue <= 0) {
-          clearInterval(intervalId)
-          timerValue = 2 // Сбрасываем таймер
-        }
-      }, 1000)
-    }
-  })
+  socket.on('checkLobbyIsFull', (code) => checkLobbyIsFull(socket, code))
 
-  socket.on('checkLobbyIsFull', async (code) => {
-    console.log('checking')
-    try {
-      const lobby = await Lobby.findOne({ where: { lobbyCode: code } })
-      const playersInlobby = await User.findAll({ where: { lobbyCode: code } })
-      if (!lobby) {
-        socket.emit('lobbyStatus', 'Мы не нашли такого лобби(', false)
-      } else {
-        if (lobby!.maxPlayers > playersInlobby.length) {
-          socket.emit('lobbyStatus', 'Мы тебя ждем, заходи скорее!', true)
-        } else if (lobby!.maxPlayers === playersInlobby.length) {
-          socket.emit('lobbyStatus', 'Это лобби уже заполнено!', false)
-        }
-      }
-    } catch (e) {
-      socket.emit('lobbyStatus', 'Мы не нашли такого лобби(', false)
-      console.log(e)
-    }
-  })
-
-  socket.on('disconnect', async () => {
-    console.log('user disconnected', socket.id)
-    const disconectedUser = {
-      ...(await User.findOne({ where: { socket: socket.id } }))?.dataValues,
-    }
-    const disconectedLobbyCode = disconectedUser.lobbyCode
-
-    await User.update(
-      { lobbyCode: null, lobbyLeader: null },
-      { where: { socket: socket.id } }
-    )
-    const playersInLobby = await User.findAll({
-      where: { lobbyCode: disconectedLobbyCode },
-    })
-
-    const arrOfNicks = playersInLobby.map((user) => user.nick)
-
-    if (
-      (await User.findAll({
-        where: { lobbyCode: disconectedLobbyCode },
-      }).then((users) => users.length === 0)) &&
-      disconectedLobbyCode
-    ) {
-      await Lobby.destroy({ where: { lobbyCode: disconectedLobbyCode } })
-    } else {
-      if (disconectedLobbyCode) {
-        io.to(disconectedLobbyCode).emit('updatePlayers', arrOfNicks)
-      }
-    }
-  })
+  socket.on('disconnect', () => disconnect(socket))
 })
 
 httpServer.listen(3001, () => {

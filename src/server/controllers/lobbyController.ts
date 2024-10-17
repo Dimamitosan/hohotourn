@@ -34,63 +34,10 @@ export const createLobby = async (socket: any, countOfPlayers: number) => {
   }
 }
 
-export const getScores = async (socket: any, code: string) => {
-  socket.on('getScores', async () => {
-    try {
-      const users = await User.findAll({ where: { lobbyCode: code } })
-      const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
-      socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
-    } catch (e) {
-      console.log(e)
-    }
-  })
-}
-
-export const joinLobby = async (socket: any, code: string) => {
-  socket.join(code)
-  if (await Lobby.findOne({ where: { lobbyCode: code } })) {
-    if (
-      await User.findOne({
-        where: { socket: socket.id, lobbyCode: null }, //, lobbyCode: null
-      })
-    ) {
-      console.log('user finded!')
-      await User.update(
-        { lobbyCode: code, lobbyLeader: false },
-        { where: { socket: socket.id } }
-      )
-    }
-    socket.join(code)
-    socket.emit(
-      'findLobbyLeader',
-      await User.findOne({ where: { socket: socket.id } }).then(
-        (user) => user?.lobbyLeader
-      )
-    )
-    try {
-      const lobbyInfo = await Lobby?.findOne({ where: { lobbyCode: code } })
-      const maxPlayers = lobbyInfo?.maxPlayers
-
-      io.to(code).emit('updateLobbyInfo', maxPlayers)
-    } catch (e) {
-      console.log(e)
-    }
-
-    const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
-    const arrOfNicks = playersInLobby.map((user) => user.nick)
-    console.log(arrOfNicks)
-    io.to(code).emit('updatePlayers', arrOfNicks)
-  }
-}
-
 export let timerValue = 2
 
 export const timerUpdate = (socket: any) => {
   socket.emit('timerUpdate', timerValue)
-}
-
-export const startGame = (socket: any, code: string) => {
-  io.to(code).emit('startGame') // Уведомляем всех участников лобби
 }
 
 export const startTimer = (socket: any, code: string) => {
@@ -105,6 +52,21 @@ export const startTimer = (socket: any, code: string) => {
         timerValue = 2 // Сбрасываем таймер
       }
     }, 1000)
+  }
+}
+
+export const startGame = (socket: any, code: string) => {
+  io.to(code).emit('startGame') // Уведомляем всех участников лобби
+}
+
+export const getScores = async (socket: any, code: string) => {
+  try {
+    const users = await User.findAll({ where: { lobbyCode: code } })
+    const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
+
+    socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
+  } catch (e) {
+    console.log('ошибка -', e)
   }
 }
 

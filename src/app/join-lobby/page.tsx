@@ -13,7 +13,7 @@ const JoinLobby = () => {
   useEffect(() => {
     socket.on('lobbyStatus', (text: string, status: boolean) => {
       setLobbyStatus(status)
-      console.log(text, 'статус - ', status)
+
       setLobbyText(text)
     })
 
@@ -21,7 +21,6 @@ const JoinLobby = () => {
       socket.emit('checkLobbyIsFull', code)
     }
 
-    console.log(code.length)
     // Очистка события при размонтировании компонента
     return () => {
       socket.off('lobbyStatus')
@@ -37,7 +36,6 @@ const JoinLobby = () => {
         value={code}
         onChange={(e) => {
           setCode(e.target.value.toUpperCase())
-          console.log(code)
         }}
       />
       {code.length === 5 && lobbyStatus === true && (
