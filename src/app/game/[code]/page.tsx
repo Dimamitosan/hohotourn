@@ -19,6 +19,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       setScores(data) // Обновление состояния с полученными данными
     })
 
+    socket.emit('')
     return () => {
       socket.off('scoresData') // Удаляем слушателя при размонтировании компонента
     }

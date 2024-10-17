@@ -15,12 +15,19 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
   const [players, setPlayers] = useState<string[]>([])
   const [lobbyLeader, setLobbyLeader] = useState<boolean>(false)
-  const [timer, setTimer] = useState<number>(10)
+  const [timer, setTimer] = useState<number>(2)
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
+  const [maxPlayers, setMaxPlayers] = useState<number>(0)
+  const [timerStarted, setTimerStarted] = useState<boolean>(false)
 
   useEffect(() => {
     if (code) {
       socket.emit('joinLobby', code)
+      try {
+        socket.on('updateLobbyInfo', (max: number) => {
+          setMaxPlayers(max)
+        })
+      } catch (e) {}
 
       const handleUpdatePlayers = (newPlayers: string[]) => {
         setPlayers(newPlayers)
@@ -60,24 +67,27 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   }, [])
 
   const handleStartGame = () => {
-    if (lobbyLeader) {
-      socket.emit('startTimer', code)
-    }
+    setTimerStarted(true)
+    socket.emit('startTimer', code)
   }
 
   return (
     <div>
       <h1>Лобби: {code}</h1>
+      <h2>
+        Игроков: {players.length}/{maxPlayers}
+      </h2>
       <h2>Игроки:</h2>
       <ul>
         {players.map((player) => (
           <li key={player}>{player}</li>
         ))}
       </ul>
-      {lobbyLeader && !isGameStarted && (
+      {lobbyLeader && !isGameStarted && !timerStarted && (
         <button onClick={handleStartGame}>Начать игру</button>
       )}
       <h2>Осталось времени: {timer}</h2>
+      {players}
     </div>
   )
 }

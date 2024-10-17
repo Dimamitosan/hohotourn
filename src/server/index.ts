@@ -3,13 +3,17 @@ import { createServer } from 'http'
 import sequelize from '../config/db'
 import User from '../models/User'
 import Lobby from '../models/Lobby'
+import dotenv from 'dotenv'
+
+dotenv.config({ path: '../../.env' })
+
 sequelize.sync({}).then(() => {
   // force: true убрал
   console.log('Database & tables created!')
 })
 
 const httpServer = createServer()
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: {
     origin: '*',
   },
@@ -17,11 +21,18 @@ const io = new Server(httpServer, {
 
 //bot
 import TelegramBot from 'node-telegram-bot-api'
+import { where } from 'sequelize'
 // import { USE } from 'sequelize/lib/index-hints'
 
 const webAppUrl = 'https://client.ru.tuna.am'
 
-const token = '6304629931:AAFq7J2ONfaq9j_co_vdQRWMY0eUfZJkK6E'
+const token = process.env.BOT_TOKEN
+
+if (!token) {
+  console.log('Процесс окружения:', process.env)
+  console.log('token -', token)
+  throw Error('token не найден!')
+}
 
 const bot = new TelegramBot(token, { polling: true })
 
@@ -65,10 +76,14 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('createLobby', async () => {
+  socket.on('createLobby', async (countOfPlayers) => {
     const code = generateLobbyCode()
     try {
-      await Lobby.create({ lobbyCode: code, gameStarted: false })
+      await Lobby.create({
+        lobbyCode: code,
+        gameStarted: false,
+        maxPlayers: countOfPlayers,
+      })
       await User.update(
         { lobbyCode: code, lobbyLeader: true },
         { where: { socket: socket.id } }
@@ -118,6 +133,15 @@ io.on('connection', (socket) => {
           (user) => user?.lobbyLeader
         )
       )
+      try {
+        const lobbyInfo = await Lobby?.findOne({ where: { lobbyCode: code } })
+        const maxPlayers = lobbyInfo?.maxPlayers
+
+        io.to(code).emit('updateLobbyInfo', maxPlayers)
+      } catch (e) {
+        console.log(e)
+      }
+
       const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
       const arrOfNicks = playersInLobby.map((user) => user.nick)
       io.to(code).emit('updatePlayers', arrOfNicks)
@@ -144,6 +168,26 @@ io.on('connection', (socket) => {
           timerValue = 2 // Сбрасываем таймер
         }
       }, 1000)
+    }
+  })
+
+  socket.on('checkLobbyIsFull', async (code) => {
+    console.log('checking')
+    try {
+      const lobby = await Lobby.findOne({ where: { lobbyCode: code } })
+      const playersInlobby = await User.findAll({ where: { lobbyCode: code } })
+      if (!lobby) {
+        socket.emit('lobbyStatus', 'Мы не нашли такого лобби(', false)
+      } else {
+        if (lobby!.maxPlayers > playersInlobby.length) {
+          socket.emit('lobbyStatus', 'Мы тебя ждем, заходи скорее!', true)
+        } else if (lobby!.maxPlayers === playersInlobby.length) {
+          socket.emit('lobbyStatus', 'Это лобби уже заполнено!', false)
+        }
+      }
+    } catch (e) {
+      socket.emit('lobbyStatus', 'Мы не нашли такого лобби(', false)
+      console.log(e)
     }
   })
 

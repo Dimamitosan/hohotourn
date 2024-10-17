@@ -5,22 +5,33 @@ import { useRouter } from 'next/navigation'
 
 const CreateLobby = () => {
   const [lobbyCode, setLobbyCode] = useState('')
+  const [countOfPlayers, setCountOfPlayers] = useState('10')
   const router = useRouter()
   const socket = useSocket()
 
-  useEffect(() => {
-    socket.emit('createLobby')
+  const createLobby = () => {
+    socket.emit('createLobby', countOfPlayers)
     socket.on('lobbyCreated', (code: string) => {
       setLobbyCode(code) // Устанавливаете код лобби
       router.push(`/lobby/${code}`) // Перенаправляете на лобби
     })
+  }
 
-    return () => {
-      socket.off('lobbyCreated') // Отписываемся от события
-    }
-  }, [socket, router])
+  return (
+    <>
+      <input
+        type="number"
+        id="numberOfPlayers"
+        max={10}
+        min={1}
+        defaultValue={10}
+        onChange={(event) => setCountOfPlayers(event.target.value)}
+      />
+      <button onClick={createLobby}>Submit</button>
 
-  return <h1>Создание лобби...</h1>
+      <h1>Создание лобби...</h1>
+    </>
+  )
 }
 
 export default CreateLobby
