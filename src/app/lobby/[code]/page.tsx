@@ -15,7 +15,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
   const [players, setPlayers] = useState<string[]>([])
   const [lobbyLeader, setLobbyLeader] = useState<boolean>(false)
-  const [timer, setTimer] = useState<number>(2)
+  const [timer, setTimer] = useState<number>(5)
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
   const [maxPlayers, setMaxPlayers] = useState<number>(0)
   const [timerStarted, setTimerStarted] = useState<boolean>(false)
@@ -87,7 +87,6 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
         <button onClick={handleStartGame}>Начать игру</button>
       )}
       <h2>Осталось времени: {timer}</h2>
-      {players}
     </div>
   )
 }

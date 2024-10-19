@@ -4,21 +4,6 @@ import User from '../../models/User'
 import { Socket } from 'socket.io-client'
 import { io } from '../index'
 
-export const userEnter = async (socket: any, [telegramId, nick]: any) => {
-  try {
-    await User.findOrCreate({
-      where: { telegramId },
-      defaults: { nick, coins: 0, score: 0 },
-    })
-    await User.update(
-      { socket: socket.id, lobbyCode: null },
-      { where: { telegramId } }
-    )
-  } catch (e) {
-    console.log(e)
-  }
-}
-
 export const joinLobby = async (socket: any, code: string) => {
   socket.join(code)
   if (await Lobby.findOne({ where: { lobbyCode: code } })) {

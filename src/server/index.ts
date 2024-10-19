@@ -9,11 +9,9 @@ import {
   timerValue,
   startGame,
 } from './controllers/lobbyController'
-import {
-  joinLobby,
-  checkLobbyIsFull,
-  userEnter,
-} from './controllers/joinControllers'
+import { sendQuestion } from './controllers/gameControllers'
+import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
+import { userEnter } from './controllers/settingsControllers'
 
 sequelize.sync({}).then(() => {
   // force: true убрал
@@ -51,6 +49,15 @@ io.on('connection', (socket) => {
   socket.on('getScores', (code) => getScores(socket, code))
 
   socket.on('checkLobbyIsFull', (code) => checkLobbyIsFull(socket, code))
+
+  socket.on('togglePause', (code) => {
+    console.log('emit changePause')
+    io.to(code).emit('changePause')
+  })
+
+  socket.on('sendQuestion', ([code, question]) =>
+    sendQuestion(socket, [code, question])
+  )
 
   socket.on('disconnect', () => disconnect(socket))
 })

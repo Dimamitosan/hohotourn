@@ -1,10 +1,7 @@
-import { Server } from 'socket.io'
 import Lobby from '../../models/Lobby'
 import User from '../../models/User'
-import { Socket } from 'socket.io-client'
-import { io } from '../index'
 
-// createLobby getScores joinLobby startGame startTimer disconect
+import { io } from '../index'
 
 const generateLobbyCode = () => {
   return Math.random().toString(36).substring(2, 7).toUpperCase()
@@ -34,22 +31,24 @@ export const createLobby = async (socket: any, countOfPlayers: number) => {
   }
 }
 
-export let timerValue = 2
+export let timerValue = 5
 
 export const timerUpdate = (socket: any) => {
   socket.emit('timerUpdate', timerValue)
 }
 
 export const startTimer = (socket: any, code: string) => {
-  if (timerValue === 2) {
+  if (timerValue === 5) {
     const intervalId = setInterval(() => {
       timerValue--
+      console.log('time ticking', timerValue)
       io.to(code).emit('timerUpdate', timerValue) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
 
       // Остановка таймера, когда он достигает 0
       if (timerValue <= 0) {
+        console.log('timer cleared')
         clearInterval(intervalId)
-        timerValue = 2 // Сбрасываем таймер
+        timerValue = 5 // Сбрасываем таймер
       }
     }, 1000)
   }
