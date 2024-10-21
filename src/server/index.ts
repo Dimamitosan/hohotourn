@@ -3,13 +3,16 @@ import { createServer } from 'http'
 import sequelize from '../config/db'
 import {
   createLobby,
-  getScores,
   startTimer,
   disconnect,
   timerValue,
   startGame,
 } from './controllers/lobbyController'
-import { sendQuestion } from './controllers/gameControllers'
+import {
+  sendQuestion,
+  getScores,
+  setNumbers,
+} from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter } from './controllers/settingsControllers'
 
@@ -55,9 +58,13 @@ io.on('connection', (socket) => {
     io.to(code).emit('changePause')
   })
 
-  socket.on('sendQuestion', ([code, question]) =>
-    sendQuestion(socket, [code, question])
+  socket.on('sendQuestion', ([question, code]: string[]) =>
+    sendQuestion(socket, [question, code])
   )
+
+  socket.on('setNumbers', (code) => {
+    setNumbers(socket, code)
+  })
 
   socket.on('disconnect', () => disconnect(socket))
 })

@@ -55,12 +55,14 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
     socket.on('timerUpdate', (newTime: number) => {
       setTimer(newTime)
       if (newTime === 0) {
+        socket.emit('setNumbers', code)
         socket.emit('startGame', code)
       }
     })
 
     // Убираем слушателя при размонтировании компонента
     return () => {
+      socket.off('setNumbers', code)
       socket.off('timerUpdate')
       socket.off('startGame')
     }
@@ -68,6 +70,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
   const handleStartGame = () => {
     setTimerStarted(true)
+
     socket.emit('startTimer', code)
   }
 

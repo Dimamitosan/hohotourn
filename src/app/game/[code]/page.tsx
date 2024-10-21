@@ -13,6 +13,12 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   const [phase, setPhase] = useState<number>(1)
   const [question, setQuestion] = useState<string>('')
   const [questionIsReady, setQuestionIsReady] = useState<boolean>(false)
+  const [firstAnswer, setFirstAnswer] = useState<string>('')
+  const [firstAnswerIsReady, setFirstAnswerIsReady] = useState<boolean>(false)
+  const [secondAnswer, setSecondAnswer] = useState<string>('')
+  const [secondAnswerIsReady, setSecondAnswerIsReady] = useState<boolean>(false)
+  const [firstQuestion, setFirstQuestion] = useState<string>('')
+  const [secondQuestion, setSecondQuestion] = useState<string>('')
 
   const socket = useSocket()
   const code = params.code
@@ -46,7 +52,6 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
           return 10 // Устанавливаем секунд на 10 для второй фазы
         } else if (phase === 2) {
           setPhase(3)
-          socket.emit('sendQuestion', [code, question])
           return 10
         } else {
           return 0 // Завершаем таймер
@@ -62,6 +67,27 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       clearInterval(intervalId)
     }
   }, [isPaused, phase])
+
+  useEffect(() => {
+    if (phase === 2 && seconds === 0) {
+      socket.emit('setNumbers', code)
+      socket.emit('sendQuestion', [question, code])
+      socket.on('getQuestions', (data: Array<string>) => {
+        setFirstQuestion(data[0])
+        setSecondQuestion(data[1])
+        // const [firstQuestion, secondQuestion] = data
+      })
+      console.log(firstQuestion, secondQuestion)
+    }
+    if (phase === 3 && seconds === 0) {
+      socket.emit('sendAnswers', [firstAnswer, secondAnswer])
+    }
+
+    return () => {
+      socket.off('setNumbers')
+      socket.off('sendQuestion')
+    }
+  }, [phase, seconds, question, firstQuestion, secondQuestion])
 
   const handleTogglePause = () => {
     console.log('button presed')
@@ -96,7 +122,56 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
             }}
           />
           {questionIsReady ? null : (
-            <button onClick={() => setQuestionIsReady(true)}>Отправить</button>
+            <button
+              onClick={() => {
+                setQuestionIsReady(true)
+              }}
+            >
+              Отправить
+            </button>
+          )}
+        </div>
+      ) : null}
+      {phase === 3 ? (
+        <div>
+          {firstQuestion}
+          <input
+            disabled={firstAnswerIsReady}
+            type="text"
+            placeholder="Введите ответ на вопрос"
+            value={firstAnswer}
+            onChange={(e) => {
+              setFirstAnswer(e.target.value)
+            }}
+          />
+          {questionIsReady ? null : (
+            <button
+              onClick={() => {
+                setFirstAnswerIsReady(true)
+              }}
+            >
+              Отправить
+            </button>
+          )}
+
+          {secondQuestion}
+          <input
+            disabled={secondAnswerIsReady}
+            type="text"
+            placeholder="Введите ответ на вопрос"
+            value={secondAnswer}
+            onChange={(e) => {
+              setSecondAnswer(e.target.value)
+            }}
+          />
+          {questionIsReady ? null : (
+            <button
+              onClick={() => {
+                setSecondAnswerIsReady(true)
+              }}
+            >
+              Отправить
+            </button>
           )}
         </div>
       ) : null}
@@ -107,6 +182,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       <button onClick={handleTogglePause}>
         {isPaused ? 'Продолжить' : 'Пауза'}
       </button>
+      {question + '1'}
     </div>
   )
 }

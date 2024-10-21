@@ -10,6 +10,11 @@ interface UserAttributes {
   socket?: string
   lobbyLeader?: boolean | null
   score: number
+  number?: number | null
+
+  question?: string | null
+  firstAnswer?: string | null
+  secondAnswer?: string | null
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
@@ -26,6 +31,11 @@ class User
   public socket?: string
   public lobbyLeader?: boolean | null
   public score!: number
+  public number?: number | null
+
+  public question?: string | null
+  public firstAnswer?: string | null
+  public secondAnswer?: string | null
 }
 
 User.init(
@@ -59,6 +69,22 @@ User.init(
     score: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+    number: {
+      type: DataTypes.NUMBER,
+      allowNull: true,
+    },
+    firstAnswer: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    secondAnswer: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    question: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
   },
   {

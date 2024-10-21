@@ -58,17 +58,6 @@ export const startGame = (socket: any, code: string) => {
   io.to(code).emit('startGame') // Уведомляем всех участников лобби
 }
 
-export const getScores = async (socket: any, code: string) => {
-  try {
-    const users = await User.findAll({ where: { lobbyCode: code } })
-    const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
-
-    socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
-  } catch (e) {
-    console.log('ошибка -', e)
-  }
-}
-
 export const disconnect = async (socket: any) => {
   console.log('user disconnected', socket.id)
   const disconectedUser = {
