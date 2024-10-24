@@ -1,5 +1,26 @@
 import User from '../../models/User'
 
+//
+export const findLobbyLeader = async (socket: any, code: string) => {
+  const ll = await User.findOne({ where: { socket: socket.id } }).then(
+    (user) => user?.lobbyLeader
+  )
+  console.log(
+    await User.findOne({ where: { socket: socket.id } }).then(
+      (user) => user?.lobbyLeader
+    ),
+    '---------lobby leader',
+    ll
+  )
+  socket.emit(
+    'getLeader',
+    await User.findOne({ where: { socket: socket.id } }).then(
+      (user) => user?.lobbyLeader
+    )
+  )
+}
+//
+
 function getRandomNumbers(n: number) {
   const numbers = Array.from({ length: n }, (_, i) => i + 1)
   for (let i = numbers.length - 1; i > 0; i--) {
@@ -27,11 +48,6 @@ export const sendQuestion = async (socket: any, [question, code]: string[]) => {
     where: { socket: socket.id },
   })
   if (userNumber && userNumber.number) {
-    // }).then((user) => {
-    //   user?.number
-    // })
-    // for (let i = 1; i <= countOfPlayers; i++) {
-
     const firstUserForQuestion = await User.findOne({
       where: {
         lobbyCode: code,

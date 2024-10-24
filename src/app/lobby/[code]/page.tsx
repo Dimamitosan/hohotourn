@@ -33,7 +33,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
         setPlayers(newPlayers)
       }
 
-      socket.on('findLobbyLeader', (leader: boolean) => {
+      socket.on('setLeader', (leader: boolean) => {
         setLobbyLeader(leader)
       })
 
@@ -46,6 +46,9 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
       })
 
       return () => {
+        socket.off('startGame')
+        socket.off('setLeader')
+        socket.off('updateLobbyInfo')
         socket.off('updatePlayers', handleUpdatePlayers)
       }
     }
@@ -62,9 +65,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
     // Убираем слушателя при размонтировании компонента
     return () => {
-      socket.off('setNumbers', code)
       socket.off('timerUpdate')
-      socket.off('startGame')
     }
   }, [])
 

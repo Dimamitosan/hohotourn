@@ -7,6 +7,7 @@ interface LobbyProps {
   params: any
 }
 const Game: React.FC<LobbyProps> = ({ params }) => {
+  const [lobbyLeader, setLobbyLeader] = useState<boolean | null>(null)
   const [scores, setScores] = useState<any[]>([])
   const [seconds, setSeconds] = useState(5)
   const [isPaused, setIsPaused] = useState(false)
@@ -22,6 +23,38 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
 
   const socket = useSocket()
   const code = params.code
+
+  useEffect(() => {
+    socket.emit('findLobbyLeader', code)
+    socket.on('getLeader', (isLeader: boolean) => {
+      setLobbyLeader(isLeader)
+    })
+  }, [socket, lobbyLeader])
+
+  useEffect(() => {
+    if (lobbyLeader) {
+      socket.emit('startGameTimer', code)
+    }
+    socket.on(
+      'gameTimerUpdate',
+      ({
+        gameTimerValue,
+        gamePhase,
+        paused,
+      }: {
+        gameTimerValue: number
+        gamePhase: number
+        paused: boolean
+      }) => {
+        setSeconds(gameTimerValue)
+        setPhase(gamePhase)
+        setIsPaused(paused)
+      }
+    )
+    return () => {
+      socket.off('getLeader')
+    }
+  }, [socket, lobbyLeader])
 
   useEffect(() => {
     socket.on('changePause', () => {
@@ -41,41 +74,13 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   }, [socket])
 
   useEffect(() => {
-    // Функция для заполнения таймера
-    const tick = () => {
-      if (isPaused) return // Если таймер на паузе, ничего не делаем
-      setSeconds((prevSeconds) => {
-        if (prevSeconds > 0) {
-          return prevSeconds - 1 // Уменьшаем секунды на 1
-        } else if (phase === 1) {
-          setPhase(2) // Переходим во вторую фазу
-          return 10 // Устанавливаем секунд на 10 для второй фазы
-        } else if (phase === 2) {
-          setPhase(3)
-          return 10
-        } else {
-          return 0 // Завершаем таймер
-        }
-      })
-    }
-
-    // Запускаем интервал
-    const intervalId = setInterval(tick, 1000)
-
-    // Очистка интервала при размонтировании компонента
-    return () => {
-      clearInterval(intervalId)
-    }
-  }, [isPaused, phase])
-
-  useEffect(() => {
     if (phase === 2 && seconds === 0) {
       socket.emit('setNumbers', code)
       socket.emit('sendQuestion', [question, code])
+      console.log('send question works!!!!!!!!')
       socket.on('getQuestions', (data: Array<string>) => {
         setFirstQuestion(data[0])
         setSecondQuestion(data[1])
-        // const [firstQuestion, secondQuestion] = data
       })
       console.log(firstQuestion, secondQuestion)
     }
@@ -179,10 +184,20 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       <br />
       фаза - {phase}
       <br />
-      <button onClick={handleTogglePause}>
-        {isPaused ? 'Продолжить' : 'Пауза'}
-      </button>
-      {question + '1'}
+      <>
+        {lobbyLeader ? (
+          <>
+            <button onClick={handleTogglePause}>
+              {isPaused ? 'Продолжить' : 'Пауза'}
+            </button>{' '}
+            <br />
+            {lobbyLeader + ' lobby leader'}
+            <br />
+            {isPaused + ' paused?'}
+          </>
+        ) : null}
+      </>
+      {question + ' 1'}
     </div>
   )
 }

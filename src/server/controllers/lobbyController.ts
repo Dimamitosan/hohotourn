@@ -31,13 +31,8 @@ export const createLobby = async (socket: any, countOfPlayers: number) => {
   }
 }
 
-export let timerValue = 5
-
-export const timerUpdate = (socket: any) => {
-  socket.emit('timerUpdate', timerValue)
-}
-
-export const startTimer = (socket: any, code: string) => {
+export const startTimer = async (socket: any, code: string) => {
+  let timerValue = 5
   if (timerValue === 5) {
     const intervalId = setInterval(() => {
       timerValue--
@@ -66,7 +61,7 @@ export const disconnect = async (socket: any) => {
   const disconectedLobbyCode = disconectedUser.lobbyCode
 
   await User.update(
-    { lobbyCode: null, lobbyLeader: null },
+    { lobbyCode: null, lobbyLeader: null, question: null, number: null },
     { where: { socket: socket.id } }
   )
   const playersInLobby = await User.findAll({

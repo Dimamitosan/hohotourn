@@ -20,7 +20,7 @@ export const joinLobby = async (socket: any, code: string) => {
     }
     socket.join(code)
     socket.emit(
-      'findLobbyLeader',
+      'setLeader',
       await User.findOne({ where: { socket: socket.id } }).then(
         (user) => user?.lobbyLeader
       )
