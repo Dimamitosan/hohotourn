@@ -20,6 +20,11 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   const [secondAnswerIsReady, setSecondAnswerIsReady] = useState<boolean>(false)
   const [firstQuestion, setFirstQuestion] = useState<string>('')
   const [secondQuestion, setSecondQuestion] = useState<string>('')
+  const [strangersQuestion, setStrangersQuestion] = useState<string>('')
+  const [strangersAnswers, setStrangersAnswers] = useState<string[]>([])
+  const [canVote, setCanVote] = useState<boolean>(false)
+  const [canChangeAnswer, setcanChangeAnswer] = useState<boolean>(true)
+  const [numberOfQuestion, setNumberOfQuestion] = useState<number>(1)
 
   const socket = useSocket()
   const code = params.code
@@ -57,6 +62,15 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   }, [socket, lobbyLeader])
 
   useEffect(() => {
+    socket.on('getNewNumberOfquestion', (number: number) => {
+      if (number != numberOfQuestion) {
+        setcanChangeAnswer(true)
+      }
+      setNumberOfQuestion(number)
+    })
+  }, [socket, numberOfQuestion])
+
+  useEffect(() => {
     socket.on('changePause', () => {
       console.log('socketon changePause', !isPaused)
       setIsPaused((isPaused) => !isPaused)
@@ -75,6 +89,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
 
   useEffect(() => {
     if (phase === 2 && seconds === 0) {
+      //ввод вопросов, в конце они отправляются и получаются чужие вопросы
       socket.emit('setNumbers', code)
       socket.emit('sendQuestion', [question, code])
       console.log('send question works!!!!!!!!')
@@ -83,16 +98,96 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
         setSecondQuestion(data[1])
       })
       console.log(firstQuestion, secondQuestion)
-    }
-    if (phase === 3 && seconds === 0) {
-      socket.emit('sendAnswers', [firstAnswer, secondAnswer])
+      setFirstAnswer('')
     }
 
     return () => {
+      socket.off('blahblah')
       socket.off('setNumbers')
       socket.off('sendQuestion')
+      socket.off('getStragersQuestion')
+      socket.off('sendAnswers')
     }
-  }, [phase, seconds, question, firstQuestion, secondQuestion])
+  }, [
+    phase,
+    seconds,
+    question,
+    firstQuestion,
+    secondQuestion,
+    strangersAnswers,
+    strangersQuestion,
+    canVote,
+    numberOfQuestion,
+  ])
+
+  useEffect(() => {
+    if (phase === 3 && seconds === 0) {
+      // && !hasExecuted
+      //отправляются ответы на чужие вопросы
+      // socket.emit('blahblah')
+      socket.emit('sendAnswers', [firstAnswer, secondAnswer])
+
+      console.log('sended answers')
+      console.log('trying to get strangers data')
+      socket.emit('getStragersQuestion', [code, numberOfQuestion])
+      socket.on(
+        'takeStragersQuestion',
+        ([
+          [firstStrangerAnswer, secondStrangerAnswer],
+          question,
+          canVote,
+        ]: any) => {
+          setStrangersQuestion(question)
+          setStrangersAnswers([firstStrangerAnswer, secondStrangerAnswer])
+          setCanVote(canVote)
+        }
+      )
+      console.log(strangersAnswers, strangersQuestion, canVote)
+      setcanChangeAnswer(false)
+    }
+    return () => {
+      socket.off('getStragersQuestion')
+      socket.off('sendAnswers')
+    }
+  }, [
+    phase,
+    seconds,
+    question,
+    strangersAnswers,
+    strangersQuestion,
+    canVote,
+    canChangeAnswer,
+  ])
+  useEffect(() => {
+    if (phase === 4 && seconds === 10 && canChangeAnswer) {
+      socket.emit('getStragersQuestion', [code, numberOfQuestion])
+      socket.on(
+        'takeStragersQuestion',
+        ([
+          [firstStrangerAnswer, secondStrangerAnswer],
+          question,
+          canVote,
+        ]: any) => {
+          setStrangersQuestion(question)
+          setStrangersAnswers([firstStrangerAnswer, secondStrangerAnswer])
+          setCanVote(canVote)
+        }
+      )
+      console.log(strangersAnswers, strangersQuestion, canVote)
+      setcanChangeAnswer(false)
+    }
+    return () => {
+      socket.off('getStragersQuestion')
+    }
+  }, [
+    phase,
+    seconds,
+    question,
+    strangersAnswers,
+    strangersQuestion,
+    canVote,
+    canChangeAnswer,
+  ])
 
   const handleTogglePause = () => {
     console.log('button presed')
@@ -178,6 +273,29 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
               Отправить
             </button>
           )}
+        </div>
+      ) : null}
+      {phase === 4 ? (
+        <div>
+          вопрос:
+          {` ${strangersQuestion}`}
+          <br />
+          первый ответ
+          {` ${strangersAnswers[0]}`}
+          <br />
+          второй ответ
+          {` ${strangersAnswers[1]}`}
+          <br />
+          четвертая фаза работает
+          <br />
+          номер вопроса
+          {` ${numberOfQuestion}`}
+          <br />
+          вопрос может поменяться?
+          {canChangeAnswer ? ' да' : ' нет'}
+          <br />
+          могу голосовать?
+          {` ${canVote}`}
         </div>
       ) : null}
       время - {seconds}

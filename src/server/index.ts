@@ -13,6 +13,10 @@ import {
   getScores,
   setNumbers,
   findLobbyLeader,
+  startGameTimer,
+  sendAnswers,
+  getStragersQuestion,
+  blahblah,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter } from './controllers/settingsControllers'
@@ -32,7 +36,7 @@ export const io = new Server(httpServer, {
 //server
 
 io.on('connection', (socket) => {
-  socket.setMaxListeners(20)
+  socket.setMaxListeners(60)
 
   console.log('a user connected', socket.id)
 
@@ -56,58 +60,27 @@ io.on('connection', (socket) => {
     findLobbyLeader(socket, code)
   })
 
+  socket.on('sendAnswers', ([firstAnswer, secondAnswer]: string[]) => {
+    sendAnswers(socket, [firstAnswer, secondAnswer])
+  })
+
+  socket.on('blahblah', () => {
+    blahblah(socket)
+  })
+
   socket.on('checkLobbyIsFull', (code) => checkLobbyIsFull(socket, code))
 
-  let gameTimerValue = 5
-  let gamePhase = 1
-  let paused = false
-
   socket.on('startGameTimer', (code) => {
-    console.log('wtf')
-    if (gameTimerValue === 5) {
-      const intervalId = setInterval(() => {
-        socket.on('togglePause', (code) => {
-          console.log('emit changePause')
-          paused = !paused
-          console.log(paused)
-          io.to(code).emit('changePause')
-        })
-        if (!paused) {
-          gameTimerValue--
-          if (gameTimerValue < 0 && gamePhase === 1) {
-            gameTimerValue = 5
-            gamePhase = 2
-          }
-          if (gameTimerValue < 0 && gamePhase === 2) {
-            gameTimerValue = 5
-            gamePhase = 3
-          }
-
-          if (gameTimerValue <= 0 && gamePhase === 3) {
-            console.log('timer cleared')
-            clearInterval(intervalId)
-            gameTimerValue = 0 // Сбрасываем таймер
-          }
-          console.log('time ticking', gameTimerValue)
-          io.to(code).emit('gameTimerUpdate', {
-            gameTimerValue,
-            gamePhase,
-            paused,
-          }) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
-        } else {
-          io.to(code).emit('gameTimerUpdate', {
-            gameTimerValue,
-            gamePhase,
-            paused,
-          })
-        }
-      }, 1000)
-    }
+    startGameTimer(socket, code)
   })
 
   socket.on('sendQuestion', ([question, code]: string[]) =>
     sendQuestion(socket, [question, code])
   )
+
+  socket.on('getStragersQuestion', ([code, number]) => {
+    getStragersQuestion(socket, [code, number])
+  })
 
   socket.on('setNumbers', (code) => {
     setNumbers(socket, code)

@@ -1,4 +1,8 @@
+import { Socket } from 'socket.io-client'
 import User from '../../models/User'
+import { io } from '../index'
+import { where } from 'sequelize'
+const { Op } = require('sequelize')
 
 //
 export const findLobbyLeader = async (socket: any, code: string) => {
@@ -40,43 +44,195 @@ export const setNumbers = async (socket: any, code: string) => {
   })
 }
 
+export const startGameTimer = async (socket: any, code: string) => {
+  let gameTimerValue = 5
+  let gamePhase = 1
+  let paused = false
+  const countOfQuestions = await User.count({ where: { lobbyCode: code } })
+  let newNumberOfQuestion = 0
+  let cantChange = false
+
+  if (gameTimerValue === 5) {
+    const intervalId = setInterval(() => {
+      socket.on('togglePause', (code: string) => {
+        console.log('emit changePause')
+        paused = !paused
+        console.log(paused)
+        io.to(code).emit('changePause')
+      })
+      if (!paused) {
+        gameTimerValue--
+        if (gameTimerValue < 0 && gamePhase === 1) {
+          gameTimerValue = 10
+          gamePhase = 2
+        }
+        if (gameTimerValue < 0 && gamePhase === 2) {
+          gameTimerValue = 10
+          gamePhase = 3
+        }
+
+        if (gameTimerValue < 0 && gamePhase === 3) {
+          gameTimerValue = 10
+          gamePhase = 4
+        }
+        if (gameTimerValue < 0 && gamePhase === 4) {
+          if (newNumberOfQuestion < countOfQuestions) {
+            gameTimerValue = 10
+          } else {
+            console.log('timer cleared')
+            clearInterval(intervalId)
+            gameTimerValue = 0 // Сбрасываем таймер
+          }
+        }
+        if (gameTimerValue === 10 && gamePhase === 4) {
+          newNumberOfQuestion++
+          console.log('numberOfQuestion changed!')
+          setTimeout(() => {}, 1000)
+          io.to(code).emit('getNewNumberOfquestion', newNumberOfQuestion)
+        }
+        if (gameTimerValue !== 0) {
+          cantChange = true
+        }
+
+        console.log(
+          'time ticking',
+          gameTimerValue,
+          'number of question',
+          newNumberOfQuestion,
+          'game phase',
+          gamePhase
+        )
+        io.to(code).emit('gameTimerUpdate', {
+          gameTimerValue,
+          gamePhase,
+          paused,
+          newNumberOfQuestion,
+        }) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
+      } else {
+        io.to(code).emit('gameTimerUpdate', {
+          gameTimerValue,
+          gamePhase,
+          paused,
+          newNumberOfQuestion,
+        })
+      }
+    }, 1000)
+  }
+}
+
+export const blahblah = async (socket: any) => {
+  if (!socket || !socket.id) {
+    throw new Error('socket or socket.id is undefined')
+  }
+  console.log('works!')
+  const users = await User.findAll()
+  console.log(users)
+}
+
+export const sendAnswers = async (
+  socket: any,
+  [firstAnswerr, secondAnswerr]: string[]
+) => {
+  console.log(firstAnswerr, secondAnswerr, socket.id)
+
+  User.update(
+    { firstAnswer: firstAnswerr, secondAnswer: secondAnswerr },
+    { where: { socket: socket.id } }
+  )
+}
+
+export const getStragersQuestion = async (socket: any, [code, number]: any) => {
+  console.log('getStarngersQuestions')
+  setTimeout(async () => {
+    const countOfUsers = await User.count({ where: { lobbyCode: code } })
+    const firstUserNumber =
+      number - 2 <= 0 ? countOfUsers - Math.abs(number - 2) : number - 2
+    const secondUserNumber =
+      number - 1 <= 0 ? countOfUsers - Math.abs(number - 1) : number - 1
+
+    const user = await User.findOne({ where: { socket: socket.id } })
+
+    const canVote =
+      user?.number !== firstUserNumber && user?.number !== secondUserNumber
+
+    const userForQuestion = await User.findOne({
+      where: { lobbyCode: code, number },
+    })
+
+    const question = userForQuestion?.question
+
+    const userForFirstStrangerAnswer = await User.findOne({
+      where: { lobbyCode: code, number: firstUserNumber },
+    })
+
+    const firstStrangerAnswer = userForFirstStrangerAnswer?.firstAnswer
+
+    const userForSecondStrangerAnswer = await User.findOne({
+      where: { lobbyCode: code, number: secondUserNumber },
+    })
+
+    const secondStrangerAnswer = userForSecondStrangerAnswer?.secondAnswer
+
+    console.log('stranger questions sended')
+    const strangersAnswers = [firstStrangerAnswer, secondStrangerAnswer]
+    console.log(
+      firstStrangerAnswer,
+      secondStrangerAnswer,
+      question,
+      canVote,
+      firstUserNumber,
+      secondUserNumber
+    )
+    socket.emit('takeStragersQuestion', [strangersAnswers, question, canVote])
+  }, 100)
+}
+
+export const getStragersAnswers = async (socket: any, code: string) => {}
+
 export const sendQuestion = async (socket: any, [question, code]: string[]) => {
   await User.update({ question: question }, { where: { socket: socket.id } })
 
   const countOfPlayers = await User.count({ where: { lobbyCode: code } })
-  const userNumber = await User.findOne({
-    where: { socket: socket.id },
+  const countOfReadyQuestions = await User.count({
+    where: { lobbyCode: code, question: { [Op.ne]: null } },
   })
-  if (userNumber && userNumber.number) {
-    const firstUserForQuestion = await User.findOne({
-      where: {
-        lobbyCode: code,
-        number: (userNumber?.number % countOfPlayers) + 1,
-      },
+  // if (countOfReadyQuestions === countOfPlayers) {
+  setTimeout(async () => {
+    const userNumber = await User.findOne({
+      where: { socket: socket.id },
     })
-    const secondUserForQuestion = await User.findOne({
-      where: {
-        lobbyCode: code,
-        number: ((userNumber?.number + 1) % countOfPlayers) + 1,
-      },
-    })
+    if (userNumber && userNumber.number) {
+      const firstUserForQuestion = await User.findOne({
+        where: {
+          lobbyCode: code,
+          number: (userNumber?.number % countOfPlayers) + 1,
+        },
+      })
+      const secondUserForQuestion = await User.findOne({
+        where: {
+          lobbyCode: code,
+          number: ((userNumber?.number + 1) % countOfPlayers) + 1,
+        },
+      })
 
-    console.log(
-      firstUserForQuestion?.question,
-      firstUserForQuestion?.number,
-      secondUserForQuestion?.question,
-      secondUserForQuestion?.number,
+      console.log(
+        firstUserForQuestion?.question,
+        firstUserForQuestion?.number,
+        secondUserForQuestion?.question,
+        secondUserForQuestion?.number,
 
-      userNumber.number,
-      socket.id,
-      '------------вопросы'
-    )
-    socket.emit('getQuestions', [
-      firstUserForQuestion?.question,
-      secondUserForQuestion?.question,
-    ])
-  }
-  // }
+        userNumber.number,
+        socket.id,
+        '------------вопросы'
+      )
+      socket.emit('getQuestions', [
+        firstUserForQuestion?.question,
+        secondUserForQuestion?.question,
+      ])
+    }
+  }, 1000)
+
+  console.log(countOfPlayers, countOfReadyQuestions)
 }
 
 export const getScores = async (socket: any, code: string) => {
