@@ -61,7 +61,13 @@ export const disconnect = async (socket: any) => {
   const disconectedLobbyCode = disconectedUser.lobbyCode
 
   await User.update(
-    { lobbyCode: null, lobbyLeader: null, question: null, number: null },
+    {
+      lobbyCode: null,
+      lobbyLeader: null,
+      question: null,
+      number: null,
+      voteNumber: null,
+    },
     { where: { socket: socket.id } }
   )
   const playersInLobby = await User.findAll({

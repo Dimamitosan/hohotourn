@@ -16,7 +16,7 @@ import {
   startGameTimer,
   sendAnswers,
   getStragersQuestion,
-  blahblah,
+  voteForAnswer,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter } from './controllers/settingsControllers'
@@ -36,7 +36,7 @@ export const io = new Server(httpServer, {
 //server
 
 io.on('connection', (socket) => {
-  socket.setMaxListeners(60)
+  socket.setMaxListeners(100)
 
   console.log('a user connected', socket.id)
 
@@ -64,10 +64,6 @@ io.on('connection', (socket) => {
     sendAnswers(socket, [firstAnswer, secondAnswer])
   })
 
-  socket.on('blahblah', () => {
-    blahblah(socket)
-  })
-
   socket.on('checkLobbyIsFull', (code) => checkLobbyIsFull(socket, code))
 
   socket.on('startGameTimer', (code) => {
@@ -84,6 +80,10 @@ io.on('connection', (socket) => {
 
   socket.on('setNumbers', (code) => {
     setNumbers(socket, code)
+  })
+
+  socket.on('voteForAnswer', (answerNumber) => {
+    voteForAnswer(socket, answerNumber)
   })
 
   socket.on('disconnect', () => disconnect(socket))

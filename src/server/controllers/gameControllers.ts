@@ -25,6 +25,25 @@ export const findLobbyLeader = async (socket: any, code: string) => {
 }
 //
 
+// const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
+// const arrOfNicks = playersInLobby.map((user) => user.nick)
+
+async function getArrOfVotes(code: any) {
+  const arr: string[][] = [[], []]
+
+  await User.findAll({ where: { lobbyCode: code, voteNumber: 1 } }).then(
+    (users) => {
+      users.map((user) => arr[0].push(user.nick))
+    }
+  )
+  await User.findAll({ where: { lobbyCode: code, voteNumber: 2 } }).then(
+    (users) => {
+      users.map((user) => arr[1].push(user.nick))
+    }
+  )
+  return arr
+}
+
 function getRandomNumbers(n: number) {
   const numbers = Array.from({ length: n }, (_, i) => i + 1)
   for (let i = numbers.length - 1; i > 0; i--) {
@@ -53,7 +72,7 @@ export const startGameTimer = async (socket: any, code: string) => {
   let cantChange = false
 
   if (gameTimerValue === 5) {
-    const intervalId = setInterval(() => {
+    const intervalId = setInterval(async () => {
       socket.on('togglePause', (code: string) => {
         console.log('emit changePause')
         paused = !paused
@@ -76,8 +95,19 @@ export const startGameTimer = async (socket: any, code: string) => {
           gamePhase = 4
         }
         if (gameTimerValue < 0 && gamePhase === 4) {
+          gameTimerValue = 10
+          gamePhase = 5
+        }
+        if (gameTimerValue === 10 && gamePhase === 5) {
+          const arrOfVotes = await getArrOfVotes(code)
+          console.log('голоса игроков аааааааааааааааааааааааааааааааааааааааа')
+          console.log(arrOfVotes, 'массив с голосами')
+          io.to(code).emit('getArrOfVotes', arrOfVotes)
+        }
+        if (gameTimerValue === 0 && gamePhase === 5) {
           if (newNumberOfQuestion < countOfQuestions) {
             gameTimerValue = 10
+            gamePhase = 4
           } else {
             console.log('timer cleared')
             clearInterval(intervalId)
@@ -120,15 +150,6 @@ export const startGameTimer = async (socket: any, code: string) => {
   }
 }
 
-export const blahblah = async (socket: any) => {
-  if (!socket || !socket.id) {
-    throw new Error('socket or socket.id is undefined')
-  }
-  console.log('works!')
-  const users = await User.findAll()
-  console.log(users)
-}
-
 export const sendAnswers = async (
   socket: any,
   [firstAnswerr, secondAnswerr]: string[]
@@ -142,6 +163,7 @@ export const sendAnswers = async (
 }
 
 export const getStragersQuestion = async (socket: any, [code, number]: any) => {
+  await User.update({ voteNumber: null }, { where: { lobbyCode: code } })
   console.log('getStarngersQuestions')
   setTimeout(async () => {
     const countOfUsers = await User.count({ where: { lobbyCode: code } })
@@ -233,6 +255,16 @@ export const sendQuestion = async (socket: any, [question, code]: string[]) => {
   }, 1000)
 
   console.log(countOfPlayers, countOfReadyQuestions)
+}
+
+export const voteForAnswer = async (socket: any, answerNumber: number) => {
+  console.log(socket.id, answerNumber)
+  await User.update(
+    { voteNumber: answerNumber },
+    { where: { socket: socket.id } }
+  )
+  console.log(User.findOne({ where: { socket: socket.id } }))
+  console.log('answerNumber-answerNumber-answerNumber-answerNumber')
 }
 
 export const getScores = async (socket: any, code: string) => {

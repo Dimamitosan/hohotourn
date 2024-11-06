@@ -15,6 +15,8 @@ interface UserAttributes {
   question?: string | null
   firstAnswer?: string | null
   secondAnswer?: string | null
+
+  voteNumber?: number | null
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
@@ -36,6 +38,8 @@ class User
   public question?: string | null
   public firstAnswer?: string | null
   public secondAnswer?: string | null
+
+  public voteNumber?: number | null
 }
 
 User.init(
@@ -84,6 +88,10 @@ User.init(
     },
     question: {
       type: DataTypes.STRING,
+      allowNull: true,
+    },
+    voteNumber: {
+      type: DataTypes.NUMBER,
       allowNull: true,
     },
   },

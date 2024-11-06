@@ -25,6 +25,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   const [canVote, setCanVote] = useState<boolean>(false)
   const [canChangeAnswer, setcanChangeAnswer] = useState<boolean>(true)
   const [numberOfQuestion, setNumberOfQuestion] = useState<number>(1)
+  const [arrOfPlayersVotes, setArrOfPlayersVotes] = useState<any[]>([])
 
   const socket = useSocket()
   const code = params.code
@@ -102,7 +103,6 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     }
 
     return () => {
-      socket.off('blahblah')
       socket.off('setNumbers')
       socket.off('sendQuestion')
       socket.off('getStragersQuestion')
@@ -122,9 +122,6 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
 
   useEffect(() => {
     if (phase === 3 && seconds === 0) {
-      // && !hasExecuted
-      //отправляются ответы на чужие вопросы
-      // socket.emit('blahblah')
       socket.emit('sendAnswers', [firstAnswer, secondAnswer])
 
       console.log('sended answers')
@@ -188,6 +185,31 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     canVote,
     canChangeAnswer,
   ])
+
+  useEffect(() => {
+    if (phase === 5 && seconds === 10) {
+      console.log('прием голосв игроков аааааааааааааааааааааааааааааа')
+      socket.on('getArrOfVotes', (arrOfVotes: [][]) => {
+        setArrOfPlayersVotes(arrOfVotes)
+      })
+    }
+    return () => {
+      socket.off('getArrOfVotes')
+    }
+  }, [arrOfPlayersVotes])
+
+  useEffect(() => {
+    console.log('прием голосв игроков аааааааааааааааааааааааааааааа')
+    socket.on('getArrOfVotes', (arrOfVotes: [][]) => {
+      setArrOfPlayersVotes(arrOfVotes)
+    })
+
+    return () => {
+      socket.off('getArrOfVotes')
+    }
+  }, [arrOfPlayersVotes])
+
+  useEffect(() => {})
 
   const handleTogglePause = () => {
     console.log('button presed')
@@ -296,6 +318,66 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
           <br />
           могу голосовать?
           {` ${canVote}`}
+          {canVote ? (
+            <div>
+              <button
+                onClick={() => {
+                  socket.emit('voteForAnswer', 1)
+                }}
+              >
+                первый ответ
+              </button>
+              <button
+                onClick={() => {
+                  socket.emit('voteForAnswer', 2)
+                }}
+              >
+                второй ответ
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {phase === 5 ? (
+        <div>
+          вопрос:
+          {` ${strangersQuestion}`}
+          <br />
+          первый ответ
+          {` ${strangersAnswers[0]}`}
+          <br />
+          второй ответ
+          {` ${strangersAnswers[1]}`}
+          <br />
+          пятая фаза работает
+          <br />
+          номер вопроса
+          {` ${numberOfQuestion}`}
+          {
+            <div>
+              <ul>
+                голоса за первый ответ
+                {arrOfPlayersVotes[0].map((nick: string, index: number) => (
+                  <li key={index}>{nick}</li>
+                ))}
+              </ul>
+              <ul>
+                голоса за второй ответ
+                {arrOfPlayersVotes[1].map((nick: string, index: number) => (
+                  <li key={index}>{nick}</li>
+                ))}
+              </ul>
+            </div>
+          }
+          {/* {arrOfPlayersVotes.map(([firstArr, secondArr]) => (
+            <div>
+              первый ответ
+              {firstArr}
+              <br />
+              второй ответ
+              {secondArr}
+            </div>
+          ))} */}
         </div>
       ) : null}
       время - {seconds}
