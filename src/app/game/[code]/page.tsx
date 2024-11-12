@@ -26,6 +26,9 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   const [canChangeAnswer, setcanChangeAnswer] = useState<boolean>(true)
   const [numberOfQuestion, setNumberOfQuestion] = useState<number>(1)
   const [arrOfPlayersVotes, setArrOfPlayersVotes] = useState<any[]>([])
+  const [ownerOfFirstAnswer, setOwnerOfFirstAnswer] = useState<string>('')
+  const [ownerOfSecondAnswer, setOwnerOfSecondAnswer] = useState<string>('')
+  const [ownerOfQuestion, setOwnerOfQuestion] = useState<string>('')
 
   const socket = useSocket()
   const code = params.code
@@ -46,15 +49,15 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       ({
         gameTimerValue,
         gamePhase,
-        paused,
-      }: {
+      }: // paused,
+      {
         gameTimerValue: number
         gamePhase: number
-        paused: boolean
+        // paused: boolean
       }) => {
         setSeconds(gameTimerValue)
         setPhase(gamePhase)
-        setIsPaused(paused)
+        // setIsPaused(paused)
       }
     )
     return () => {
@@ -73,32 +76,40 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
 
   useEffect(() => {
     socket.on('changePause', () => {
-      console.log('socketon changePause', !isPaused)
+      console.log('socketOn changePause', !isPaused)
       setIsPaused((isPaused) => !isPaused)
     })
+  }, [socket]) //isPaused
 
-    socket.emit('getScores', code) // Запрос на получение данных
+  useEffect(() => {
+    if (phase === 1 && seconds === 5) {
+      setFirstAnswer('')
+      setSecondAnswer('')
+      setQuestion('')
+      console.log('question and answers cleared!')
+      socket.emit('getScores', code) // Запрос на получение данных
 
-    socket.on('scoresData', (data: []) => {
-      setScores(data) // Обновление состояния с полученными данными
-    })
-
+      socket.on('scoresData', (data: []) => {
+        setScores(data) // Обновление состояния с полученными данными
+      })
+    }
     return () => {
       socket.off('scoresData') // Удаляем слушателя при размонтировании компонента
     }
-  }, [socket])
+  }, [phase, seconds, code])
 
   useEffect(() => {
     if (phase === 2 && seconds === 0) {
       //ввод вопросов, в конце они отправляются и получаются чужие вопросы
+
       socket.emit('setNumbers', code)
       socket.emit('sendQuestion', [question, code])
-      console.log('send question works!!!!!!!!')
+
       socket.on('getQuestions', (data: Array<string>) => {
         setFirstQuestion(data[0])
         setSecondQuestion(data[1])
       })
-      console.log(firstQuestion, secondQuestion)
+
       setFirstAnswer('')
     }
 
@@ -130,16 +141,22 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       socket.on(
         'takeStragersQuestion',
         ([
-          [firstStrangerAnswer, secondStrangerAnswer],
-          question,
+          [
+            [firstStrangerAnswer, firstStrangersNick],
+            [secondStrangerAnswer, seconStrangersNick],
+          ],
+          [question, ownerOfQuestion],
           canVote,
         ]: any) => {
           setStrangersQuestion(question)
+          setOwnerOfQuestion(ownerOfQuestion)
+          setOwnerOfFirstAnswer(firstStrangersNick)
+          setOwnerOfSecondAnswer(seconStrangersNick)
           setStrangersAnswers([firstStrangerAnswer, secondStrangerAnswer])
           setCanVote(canVote)
         }
       )
-      console.log(strangersAnswers, strangersQuestion, canVote)
+
       setcanChangeAnswer(false)
     }
     return () => {
@@ -154,6 +171,9 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     strangersQuestion,
     canVote,
     canChangeAnswer,
+    ownerOfFirstAnswer,
+    ownerOfSecondAnswer,
+    ownerOfQuestion,
   ])
   useEffect(() => {
     if (phase === 4 && seconds === 10 && canChangeAnswer) {
@@ -161,11 +181,17 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       socket.on(
         'takeStragersQuestion',
         ([
-          [firstStrangerAnswer, secondStrangerAnswer],
-          question,
+          [
+            [firstStrangerAnswer, firstStrangersNick],
+            [secondStrangerAnswer, seconStrangersNick],
+          ],
+          [question, ownerOfQuestion],
           canVote,
         ]: any) => {
           setStrangersQuestion(question)
+          setOwnerOfQuestion(ownerOfQuestion)
+          setOwnerOfFirstAnswer(firstStrangersNick)
+          setOwnerOfSecondAnswer(seconStrangersNick)
           setStrangersAnswers([firstStrangerAnswer, secondStrangerAnswer])
           setCanVote(canVote)
         }
@@ -187,19 +213,6 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   ])
 
   useEffect(() => {
-    if (phase === 5 && seconds === 10) {
-      console.log('прием голосв игроков аааааааааааааааааааааааааааааа')
-      socket.on('getArrOfVotes', (arrOfVotes: [][]) => {
-        setArrOfPlayersVotes(arrOfVotes)
-      })
-    }
-    return () => {
-      socket.off('getArrOfVotes')
-    }
-  }, [arrOfPlayersVotes])
-
-  useEffect(() => {
-    console.log('прием голосв игроков аааааааааааааааааааааааааааааа')
     socket.on('getArrOfVotes', (arrOfVotes: [][]) => {
       setArrOfPlayersVotes(arrOfVotes)
     })
@@ -209,9 +222,8 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     }
   }, [arrOfPlayersVotes])
 
-  useEffect(() => {})
-
   const handleTogglePause = () => {
+    console.log(isPaused)
     console.log('button presed')
     socket.emit('togglePause', code)
   }
@@ -308,16 +320,9 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
           второй ответ
           {` ${strangersAnswers[1]}`}
           <br />
-          четвертая фаза работает
-          <br />
           номер вопроса
           {` ${numberOfQuestion}`}
           <br />
-          вопрос может поменяться?
-          {canChangeAnswer ? ' да' : ' нет'}
-          <br />
-          могу голосовать?
-          {` ${canVote}`}
           {canVote ? (
             <div>
               <button
@@ -341,15 +346,13 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       {phase === 5 ? (
         <div>
           вопрос:
-          {` ${strangersQuestion}`}
+          {` ${strangersQuestion} - ${ownerOfQuestion}`}
           <br />
           первый ответ
-          {` ${strangersAnswers[0]}`}
+          {` ${strangersAnswers[0]} - ${ownerOfFirstAnswer}`}
           <br />
           второй ответ
-          {` ${strangersAnswers[1]}`}
-          <br />
-          пятая фаза работает
+          {` ${strangersAnswers[1]} - ${ownerOfSecondAnswer}`}
           <br />
           номер вопроса
           {` ${numberOfQuestion}`}
@@ -369,15 +372,6 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
               </ul>
             </div>
           }
-          {/* {arrOfPlayersVotes.map(([firstArr, secondArr]) => (
-            <div>
-              первый ответ
-              {firstArr}
-              <br />
-              второй ответ
-              {secondArr}
-            </div>
-          ))} */}
         </div>
       ) : null}
       время - {seconds}
@@ -390,14 +384,9 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
             <button onClick={handleTogglePause}>
               {isPaused ? 'Продолжить' : 'Пауза'}
             </button>{' '}
-            <br />
-            {lobbyLeader + ' lobby leader'}
-            <br />
-            {isPaused + ' paused?'}
           </>
         ) : null}
       </>
-      {question + ' 1'}
     </div>
   )
 }

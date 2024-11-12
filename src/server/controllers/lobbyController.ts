@@ -7,13 +7,17 @@ const generateLobbyCode = () => {
   return Math.random().toString(36).substring(2, 7).toUpperCase()
 }
 
-export const createLobby = async (socket: any, countOfPlayers: number) => {
+export const createLobby = async (
+  socket: any,
+  [countOfPlayers, countOfRounds]: number[]
+) => {
   const code = generateLobbyCode()
   try {
     await Lobby.create({
       lobbyCode: code,
       gameStarted: false,
       maxPlayers: countOfPlayers,
+      countOfRounds,
     })
     await User.update(
       { lobbyCode: code, lobbyLeader: true },
@@ -67,6 +71,7 @@ export const disconnect = async (socket: any) => {
       question: null,
       number: null,
       voteNumber: null,
+      score: 0,
     },
     { where: { socket: socket.id } }
   )
