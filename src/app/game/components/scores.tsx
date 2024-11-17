@@ -1,19 +1,15 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useSocket } from '../../context/SocketContext'
 
-interface LobbyProps {
-  params: any
+interface Props {
+  code: any
+  seconds: number
+  phase: number
 }
-const Game: React.FC<LobbyProps> = ({ params }) => {
+const Scores: React.FC<Props> = ({ code, seconds, phase }) => {
   const [scores, setScores] = useState<any[]>([])
-  const [seconds, setSeconds] = useState(5)
-
-  const [phase, setPhase] = useState<number>(1)
-
   const socket = useSocket()
-  const code = params.code
 
   useEffect(() => {
     if (phase === 1 && seconds === 5) {
@@ -30,22 +26,17 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
 
   return (
     <div>
-      <h1>Лобби: {code}</h1>
-      {phase === 1 ? (
-        <div>
-          <h2>Игроки:</h2>
+      <h2>Игроки:</h2>
 
-          <ul>
-            {scores.map(([name, score], index) => (
-              <li key={index}>
-                {name} : {score}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <ul>
+        {scores.map(([name, score], index) => (
+          <li key={index}>
+            {name} : {score}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
 
-export default Game
+export default Scores

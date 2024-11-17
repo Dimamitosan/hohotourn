@@ -37,17 +37,29 @@ export const createLobby = async (
 
 export const startTimer = async (socket: any, code: string) => {
   let timerValue = 5
+  let cancel = false
+  socket.on('toggleStart', (code: string) => {
+    console.log('emit changePause')
+    cancel = !cancel
+    console.log(cancel)
+    io.to(code).emit('cancelStart')
+  })
   if (timerValue === 5) {
     const intervalId = setInterval(() => {
-      timerValue--
-      console.log('time ticking', timerValue)
-      io.to(code).emit('timerUpdate', timerValue) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
+      if (!cancel) {
+        timerValue--
+        console.log('time ticking', timerValue)
+        io.to(code).emit('timerUpdate', timerValue) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
 
-      // Остановка таймера, когда он достигает 0
-      if (timerValue <= 0) {
-        console.log('timer cleared')
+        // Остановка таймера, когда он достигает 0
+        if (timerValue <= 0) {
+          console.log('timer cleared')
+          clearInterval(intervalId)
+          timerValue = 5 // Сбрасываем таймер
+        }
+      } else {
         clearInterval(intervalId)
-        timerValue = 5 // Сбрасываем таймер
+        io.to(code).emit('timerUpdate', 5)
       }
     }, 1000)
   }

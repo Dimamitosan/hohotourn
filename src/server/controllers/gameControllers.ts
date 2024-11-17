@@ -304,8 +304,6 @@ export const getStragersQuestion = async (socket: any, [code, number]: any) => {
   }, 100)
 }
 
-export const getStragersAnswers = async (socket: any, code: string) => {}
-
 export const sendQuestion = async (socket: any, [question, code]: string[]) => {
   await User.update({ question: question }, { where: { socket: socket.id } })
 

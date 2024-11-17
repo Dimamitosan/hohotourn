@@ -21,6 +21,13 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   const [timerStarted, setTimerStarted] = useState<boolean>(false)
 
   useEffect(() => {
+    socket.on('cancelStart', () => {
+      setTimerStarted(false)
+      setTimer(5)
+    })
+  })
+
+  useEffect(() => {
     if (code) {
       socket.emit('joinLobby', code)
       try {
@@ -70,9 +77,12 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   }, [])
 
   const handleStartGame = () => {
-    setTimerStarted(true)
-
-    socket.emit('startTimer', code)
+    if (!timerStarted) {
+      setTimerStarted(true)
+      socket.emit('startTimer', code)
+    } else {
+      socket.emit('toggleStart', code)
+    }
   }
 
   return (
@@ -87,9 +97,12 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
           <li key={player}>{player}</li>
         ))}
       </ul>
-      {lobbyLeader && !isGameStarted && !timerStarted && (
-        <button onClick={handleStartGame}>Начать игру</button>
+      {lobbyLeader && !isGameStarted && (
+        <button onClick={handleStartGame}>
+          {timerStarted ? 'Отмена' : 'Начать игру'}
+        </button>
       )}
+
       <h2>Осталось времени: {timer}</h2>
     </div>
   )
