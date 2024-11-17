@@ -190,7 +190,7 @@ export const startGameTimer = async (socket: any, code: string) => {
             gamePhase = 1
             console.log('timer cleared')
             clearInterval(intervalId)
-            gameTimerValue = 0 // Сбрасываем таймер
+            //gameTimerValue = 0 // Сбрасываем таймер
           } else if (
             newNumberOfQuestion < countOfQuestions &&
             roundNumber <= countOfRounds
