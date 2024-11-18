@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSocket } from '../context/SocketContext'
+import style from './style.module.css'
 
 const JoinLobby = () => {
   const [code, setCode] = useState('')
@@ -28,9 +29,10 @@ const JoinLobby = () => {
   }, [socket, code]) // Следим за изменениями в socket
 
   return (
-    <div>
-      <h1>Присоединиться к лобби</h1>
+    <div className={style.content}>
+      <b className={style.insertCode}>Введите код</b>
       <input
+        className={style.input}
         type="text"
         placeholder="Введите код лобби"
         value={code}
@@ -39,8 +41,11 @@ const JoinLobby = () => {
         }}
       />
       {code.length === 5 && lobbyStatus === true && (
-        <button onClick={() => router.push(`/lobby/${code}`)}>
-          Перейти в лобби
+        <button
+          className={style.button}
+          onClick={() => router.push(`/lobby/${code}`)}
+        >
+          <b>Перейти в лобби</b>
         </button>
       )}
       {code.length === 5 && (

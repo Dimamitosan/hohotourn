@@ -5,7 +5,7 @@ import {
   createLobby,
   startTimer,
   disconnect,
-  // timerValue,
+  quitFromLobby,
   startGame,
 } from './controllers/lobbyController'
 import {
@@ -47,7 +47,7 @@ io.on('connection', (socket) => {
   socket.on('createLobby', (countOfPlayers) =>
     createLobby(socket, countOfPlayers)
   )
-
+  socket.on('quitFromLobby', (code) => quitFromLobby(socket, code))
   socket.on('joinLobby', (code) => joinLobby(socket, code))
 
   socket.on('startTimer', (code) => startTimer(socket, code))

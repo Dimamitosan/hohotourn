@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
 import Providers from './providers/providers'
+import styles from './mainStyles/layout.module.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -29,13 +30,21 @@ export default function RootLayout({
         <meta name="MobileOptimized" content="176" />
         <meta name="HandheldFriendly" content="True" />
         <meta name="robots" content="noindex,nofollow" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        ></meta>
         <Script
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"
         />
       </head>
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+      <body className={`${inter.className}`}>
+        <div className={styles.background}>
+          <div className={styles.game}>
+            <Providers>{children}</Providers>
+          </div>
+        </div>
       </body>
     </html>
   )

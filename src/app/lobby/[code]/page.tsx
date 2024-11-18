@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSocket } from '../../context/SocketContext'
+import style from '../style.module.css'
 
 interface LobbyProps {
   params: any
@@ -85,25 +86,40 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
     }
   }
 
-  return (
-    <div>
-      <h1>Лобби: {code}</h1>
-      <h2>
-        Игроков: {players.length}/{maxPlayers}
-      </h2>
-      <h2>Игроки:</h2>
-      <ul>
-        {players.map((player) => (
-          <li key={player}>{player}</li>
-        ))}
-      </ul>
-      {lobbyLeader && !isGameStarted && (
-        <button onClick={handleStartGame}>
-          {timerStarted ? 'Отмена' : 'Начать игру'}
-        </button>
-      )}
+  const quit = () => {
+    router.push(`/`)
+    socket.emit('quitFromLobby', code)
+  }
 
-      <h2>Осталось времени: {timer}</h2>
+  return (
+    <div className={style.content}>
+      <b className={style.code}>Код лобби: {code}</b>
+      <b className={style.countOfPlayers}>
+        Игроков: {players.length}/{maxPlayers}
+      </b>
+      <h2 className={timerStarted ? style.timer : style.noneTimer}>{timer}</h2>
+      <div className={style.playersList}>
+        <h2 className={style.players}>Игроки:</h2>
+        <ol className={style.playerRow}>
+          {players.map((player) => (
+            <li key={player}>{player}</li>
+          ))}
+        </ol>
+      </div>
+      <div className={style.buttons}>
+        {lobbyLeader && !isGameStarted ? (
+          <button className={style.button} onClick={handleStartGame}>
+            <b> {timerStarted ? 'Отмена' : 'Начать игру'}</b>
+          </button>
+        ) : (
+          <button className={style.button}>
+            <b>Готов</b>
+          </button>
+        )}
+        <button className={style.button} onClick={quit}>
+          <b> Выйти</b>
+        </button>
+      </div>
     </div>
   )
 }

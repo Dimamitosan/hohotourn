@@ -1,0 +1,46 @@
+.body {
+  display: grid;
+}
+.header {
+  padding-top: 20px;
+}
+
+.lobbySettings {
+  margin-top: 80px;
+}
+
+.setting {
+  display: flex;
+  justify-content: space-between;
+  background-color: rgb(253 229 170);
+  width: 288px;
+  height: 52px;
+  margin-bottom: 20px;
+  border-radius: 35px;
+}
+.setting > b {
+  margin-left: 25px;
+}
+.setting > input {
+  margin-right: 25px;
+}
+.setting > p {
+  margin-right: 25px;
+}
+
+.createButton {
+  color: black;
+  cursor: pointer;
+  margin-top: 20vh;
+  font-size: 24px;
+  background-color: rgb(253 229 170);
+  width: 288px;
+  height: 52px;
+  border: none;
+  border-radius: 35px;
+}
+
+.input {
+  border: none;
+  background: none;
+}

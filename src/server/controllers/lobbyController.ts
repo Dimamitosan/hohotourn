@@ -1,3 +1,4 @@
+import { where } from 'sequelize'
 import Lobby from '../../models/Lobby'
 import User from '../../models/User'
 
@@ -32,6 +33,23 @@ export const createLobby = async (
     io.to(code).emit('updatePlayers', arrOfNicks)
   } catch (e) {
     console.log(e)
+  }
+}
+
+export const quitFromLobby = async (socket: any, code: string) => {
+  await User.update(
+    { lobbyCode: null, lobbyLeader: null },
+    { where: { socket: socket.id } }
+  )
+
+  const playersInLobby = await User.findAll({
+    where: { lobbyCode: code },
+  })
+
+  const arrOfNicks = playersInLobby.map((user) => user.nick)
+
+  if (code) {
+    io.to(code).emit('updatePlayers', arrOfNicks)
   }
 }
 

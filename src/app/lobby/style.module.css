@@ -1,0 +1,60 @@
+.content {
+  display: grid;
+}
+
+.code {
+  padding-top: 3vh;
+  padding-bottom: 2vh;
+  font-size: 24px;
+}
+
+.timer {
+  margin-bottom: 10vh;
+}
+
+.noneTimer {
+  margin-bottom: 10vh;
+
+  opacity: 0;
+}
+
+.countOfPlayers {
+  font-size: 20px;
+  padding-bottom: 3vh;
+}
+
+.playersList {
+  height: 25vh;
+  margin-left: 10vh;
+  justify-content: left;
+}
+
+.players {
+  padding-bottom: 3vh;
+}
+
+.playerRow {
+  margin-left: 5vh;
+}
+
+.buttons {
+  height: 20vh;
+  display: grid;
+  margin-top: 15vh;
+}
+
+.button {
+  color: black;
+  cursor: pointer;
+  /* margin-bottom: 5vh; */
+  font-size: 24px;
+  background-color: rgb(253 229 170);
+  width: 288px;
+  height: 52px;
+  border: none;
+  border-radius: 35px;
+}
+
+.buttons :last-child {
+  justify-content: end;
+}

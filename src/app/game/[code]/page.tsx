@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSocket } from '../../context/SocketContext'
-import Scores from '../components/scores'
-import WriteQuestions from '../components/writeQuestions'
-import AnswerOnQuestions from '../components/answerOnQuestions'
-import VoteForAnswer from '../components/voteForAnswer'
+import Scores from '../phases/scores'
+import WriteQuestions from '../phases/writeQuestions'
+import AnswerOnQuestions from '../phases/answerOnQuestions'
+import VoteForAnswer from '../phases/voteForAnswer'
 
 interface LobbyProps {
   params: any
