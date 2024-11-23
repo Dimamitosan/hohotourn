@@ -1,10 +1,10 @@
 import { Server } from 'socket.io'
 import { createServer } from 'http'
+import User from '@/models/User'
 import sequelize from '../config/db'
 import {
   createLobby,
   startTimer,
-  disconnect,
   quitFromLobby,
   startGame,
 } from './controllers/lobbyController'
@@ -19,7 +19,7 @@ import {
   voteForAnswer,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
-import { userEnter } from './controllers/settingsControllers'
+import { userEnter, disconnect } from './controllers/settingsControllers'
 
 sequelize.sync({}).then(() => {
   // force: true убрал
@@ -91,4 +91,39 @@ io.on('connection', (socket) => {
 
 httpServer.listen(3001, () => {
   console.log('Socket.IO server running at http://localhost:3001/')
+})
+
+// Функция, которую вы хотите выполнить перед завершением
+const cleanup = async () => {
+  console.log('Выполняю очистку перед закрытием сервера...')
+  try {
+    await sequelize.authenticate() // Проверяем соединение
+    console.log('Соединение с базой данных установлено успешно.')
+    const [numberOfAffectedRows, affectedRows] = await User.update(
+      { socket: null }, // Устанавливаем новое значение
+      { where: {}, returning: true } // Параметр where пуст, поэтому будут обновлены все записи
+    )
+    console.log(`${numberOfAffectedRows} пользователей обновлено.`)
+    console.log('Обновлённые записи:', affectedRows)
+  } catch (e) {
+    console.log(e)
+  } finally {
+    await sequelize.close() // Закрываем соединение
+  }
+
+  // Важно, чтобы вы завершили процесс после выполнения всех задач
+  setTimeout(() => {
+    console.log('Сервер закрыт. все сокеты пользователей стерты.')
+    process.exit(0)
+  }, 1000) // Задержка для завершения асинхронных задач, при необходимости
+}
+
+// Обработка сигнала SIGINT (обычно Ctrl+C в терминале)
+process.on('SIGINT', () => {
+  cleanup()
+})
+
+// Обработка сигнала SIGTERM (завершение процесса системным вызовом)
+process.on('SIGTERM', () => {
+  cleanup()
 })

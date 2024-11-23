@@ -3,58 +3,85 @@
 }
 
 .code {
-  padding-top: 3vh;
-  padding-bottom: 2vh;
+  padding-top: 6vw;
+  padding-bottom: 4vw;
   font-size: 24px;
 }
 
 .timer {
-  margin-bottom: 10vh;
+  background-color: rgb(253, 229, 170);
+  border-radius: 35px;
+  width: 15vw;
+  height: 15vw;
+  font-size: 20px;
+  margin-bottom: 8vw;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.noneTimer {
-  margin-bottom: 10vh;
-
-  opacity: 0;
+.rules {
+  cursor: pointer;
+  color: black;
+  border: none;
+  font-size: 18px;
+  border-radius: 35px;
+  background-color: rgb(253, 229, 170);
+  width: 40vw;
+  height: 10vw;
+  margin-bottom: 13vw;
 }
 
 .countOfPlayers {
   font-size: 20px;
-  padding-bottom: 3vh;
+  padding-bottom: 3vw;
 }
 
 .playersList {
-  height: 25vh;
-  margin-left: 10vh;
+  height: 60vw;
+  margin-left: 20vw;
   justify-content: left;
 }
 
 .players {
-  padding-bottom: 3vh;
+  padding-bottom: 2vw;
 }
 
 .playerRow {
-  margin-left: 5vh;
+  margin-left: 6vw;
 }
 
 .buttons {
-  height: 20vh;
+  height: 35vw;
   display: grid;
-  margin-top: 15vh;
+  margin-top: 14vw;
 }
 
 .button {
   color: black;
   cursor: pointer;
   /* margin-bottom: 5vh; */
-  font-size: 24px;
+  font-size: 20px;
   background-color: rgb(253 229 170);
-  width: 288px;
-  height: 52px;
+  width: 70vw;
+  height: 15vw;
   border: none;
   border-radius: 35px;
 }
 
 .buttons :last-child {
   justify-content: end;
+}
+
+.waiting {
+  color: black;
+
+  /* margin-bottom: 5vh; */
+  font-size: 20px;
+  background-color: rgb(253 229 170);
+  width: 288px;
+  height: 52px;
+  border: none;
+  border-radius: 35px;
 }

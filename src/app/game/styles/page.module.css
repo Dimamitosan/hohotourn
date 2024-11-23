@@ -1,0 +1,52 @@
+.content {
+}
+
+.header {
+  display: grid;
+}
+
+.timeAndPause {
+  display: flex;
+  width: 100%;
+  padding: 8vw 8vw 10vw 8vw;
+  justify-content: space-between;
+}
+.timer {
+  background-color: rgb(253, 229, 170);
+  border-radius: 35px;
+  width: 15vw;
+  height: 15vw;
+  font-size: 20px;
+  margin-left: 0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.pauseButton {
+  margin-right: 0;
+  color: black;
+  cursor: pointer;
+  font-size: 20px;
+  background-color: rgb(253 229 170);
+  width: 40vw;
+  height: 15vw;
+  border: none;
+  border-radius: 35px;
+}
+
+.body {
+  display: block;
+  /* padding: 3vh 0 10vh 0; */
+  height: 60vh;
+}
+
+.footer {
+  display: grid;
+}
+
+.lobby {
+  padding-top: 3vh;
+  padding-bottom: 2vh;
+  font-size: 24px;
+}

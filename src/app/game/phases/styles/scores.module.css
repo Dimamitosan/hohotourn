@@ -1,0 +1,12 @@
+.playersList {
+  height: 80vw;
+  margin-left: 20vw;
+}
+
+.players {
+  padding: 8vw 0 3vw 0;
+}
+
+.playerRow {
+  margin-left: 4vh;
+}

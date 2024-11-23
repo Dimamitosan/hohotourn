@@ -48,8 +48,17 @@ export const quitFromLobby = async (socket: any, code: string) => {
 
   const arrOfNicks = playersInLobby.map((user) => user.nick)
 
-  if (code) {
-    io.to(code).emit('updatePlayers', arrOfNicks)
+  if (
+    (await User.findAll({
+      where: { lobbyCode: code },
+    }).then((users) => users.length === 0)) &&
+    code
+  ) {
+    await Lobby.destroy({ where: { lobbyCode: code } })
+  } else {
+    if (code) {
+      io.to(code).emit('updatePlayers', arrOfNicks)
+    }
   }
 }
 
@@ -63,6 +72,7 @@ export const startTimer = async (socket: any, code: string) => {
     io.to(code).emit('cancelStart')
   })
   if (timerValue === 5) {
+    io.to(code).emit('timerStarted')
     const intervalId = setInterval(() => {
       if (!cancel) {
         timerValue--
@@ -83,44 +93,7 @@ export const startTimer = async (socket: any, code: string) => {
   }
 }
 
-export const startGame = (socket: any, code: string) => {
+export const startGame = async (socket: any, code: string) => {
+  await Lobby.update({ gameStarted: true }, { where: { lobbyCode: code } })
   io.to(code).emit('startGame') // Уведомляем всех участников лобби
-}
-
-export const disconnect = async (socket: any) => {
-  console.log('user disconnected', socket.id)
-  const disconectedUser = {
-    ...(await User.findOne({ where: { socket: socket.id } }))?.dataValues,
-  }
-  const disconectedLobbyCode = disconectedUser.lobbyCode
-
-  await User.update(
-    {
-      lobbyCode: null,
-      lobbyLeader: null,
-      question: null,
-      number: null,
-      voteNumber: null,
-      score: 0,
-    },
-    { where: { socket: socket.id } }
-  )
-  const playersInLobby = await User.findAll({
-    where: { lobbyCode: disconectedLobbyCode },
-  })
-
-  const arrOfNicks = playersInLobby.map((user) => user.nick)
-
-  if (
-    (await User.findAll({
-      where: { lobbyCode: disconectedLobbyCode },
-    }).then((users) => users.length === 0)) &&
-    disconectedLobbyCode
-  ) {
-    await Lobby.destroy({ where: { lobbyCode: disconectedLobbyCode } })
-  } else {
-    if (disconectedLobbyCode) {
-      io.to(disconectedLobbyCode).emit('updatePlayers', arrOfNicks)
-    }
-  }
 }

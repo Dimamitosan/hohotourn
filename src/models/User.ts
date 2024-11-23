@@ -7,7 +7,7 @@ interface UserAttributes {
   coins?: number
   lobbyCode?: string | null
   telegramId?: string
-  socket?: string
+  socket?: string | null
   lobbyLeader?: boolean | null
   score: number
   number?: number | null
@@ -30,7 +30,7 @@ class User
   public coins!: number
   public lobbyCode?: string | null
   public telegramId!: string
-  public socket?: string
+  public socket!: string | null
   public lobbyLeader?: boolean | null
   public score!: number
   public number?: number | null

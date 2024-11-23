@@ -1,0 +1,89 @@
+.content {
+  display: grid;
+}
+
+.question {
+  display: flex;
+  justify-content: center; /* Горизонтальное центрирование */
+  align-items: center;
+  text-align: center;
+  font-size: 18px;
+
+  border: none;
+  background-color: rgb(253 229 170);
+  width: 90vw;
+  min-height: 20vw;
+  max-height: 40vw;
+  color: black;
+  border-radius: 35px;
+  margin-top: 1vw;
+  margin-bottom: 4vw;
+  padding: 6vw;
+  box-sizing: border-box; /* Учитывать границы и отступы в ширине и высоте */
+  overflow-wrap: break-word; /* Устанавливает перенос длинных слов */
+  word-wrap: break-word; /* Альтернативный способ для старых браузеров */
+  white-space: normal;
+}
+.question > p {
+  width: 100%;
+}
+
+.answerButton {
+  cursor: pointer;
+  font-size: 18px;
+  margin-top: 1vw;
+
+  border: none;
+  background-color: rgb(253 229 170);
+  /* width: 150px;
+  height: 40px; */
+  color: black;
+  text-align: center;
+  border-radius: 35px;
+  margin-bottom: 4vw;
+  padding: 1vw 6vw;
+  width: 80vw;
+  min-height: 10vw;
+  max-height: 20vw;
+  box-sizing: border-box; /* Учитывать границы и отступы в ширине и высоте */
+  overflow-wrap: break-word; /* Устанавливает перенос длинных слов */
+  word-wrap: break-word; /* Альтернативный способ для старых браузеров */
+  white-space: normal;
+}
+.disabled {
+  cursor: default;
+}
+
+.answerArea {
+  display: grid;
+}
+.answerArea > p {
+  text-align: center;
+}
+
+.owner {
+  text-align: center;
+}
+.numberOfQuestion {
+  display: flex;
+
+  justify-content: space-between;
+  width: 80vw;
+}
+
+.votes {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ul {
+  height: 40vw;
+  width: 48vw;
+  text-align: center;
+}
+
+.li {
+  padding-top: 0vh;
+  font-size: 16px;
+  list-style-type: none;
+}

@@ -12,47 +12,60 @@ const JoinLobby = () => {
   const socket = useSocket()
 
   useEffect(() => {
+    if (code.length === 5) {
+      socket.emit('checkLobbyIsFull', code)
+    }
     socket.on('lobbyStatus', (text: string, status: boolean) => {
       setLobbyStatus(status)
 
       setLobbyText(text)
     })
 
-    if (code.length === 5) {
-      socket.emit('checkLobbyIsFull', code)
-    }
-
-    // Очистка события при размонтировании компонента
     return () => {
       socket.off('lobbyStatus')
     }
-  }, [socket, code]) // Следим за изменениями в socket
+  }, [socket, code, lobbyStatus, lobbyText])
+
+  const handleChangeCode = (value: string) => {
+    setLobbyStatus(false)
+    setCode(value.toUpperCase())
+  }
 
   return (
     <div className={style.content}>
-      <b className={style.insertCode}>Введите код</b>
-      <input
-        className={style.input}
-        type="text"
-        placeholder="Введите код лобби"
-        value={code}
-        onChange={(e) => {
-          setCode(e.target.value.toUpperCase())
-        }}
-      />
-      {code.length === 5 && lobbyStatus === true && (
-        <button
-          className={style.button}
-          onClick={() => router.push(`/lobby/${code}`)}
-        >
-          <b>Перейти в лобби</b>
-        </button>
-      )}
+      <button className={style.back} onClick={() => router.push(`/`)}>
+        {'<'}
+      </button>
+      <p className={style.insertCode}>Введите код лобби</p>
+      <div className={style.inputContainer}>
+        <input
+          className={` ${
+            code.length === 5 && lobbyStatus === true
+              ? style.inputDone
+              : style.input
+          }`}
+          type="text"
+          placeholder="*****"
+          maxLength={5}
+          value={code}
+          onChange={(e) => {
+            handleChangeCode(e.target.value)
+          }}
+        />
+        {code.length === 5 && lobbyStatus === true && (
+          <button
+            className={`${style.inputButton} ${style.visible}`}
+            onClick={() => router.push(`/lobby/${code}`)}
+          >
+            <p>{'>'}</p>
+          </button>
+        )}
+      </div>
+
       {code.length === 5 && (
         <div
           style={{
             marginTop: '10px',
-            color: lobbyStatus === false ? 'red' : 'green',
           }}
         >
           {lobbyText}

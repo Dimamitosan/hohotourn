@@ -20,52 +20,77 @@ const CreateLobby = () => {
 
   return (
     <div className={style.body}>
-      <div className={style.header}>
-        <h1>Создание лобби</h1>
-      </div>
+      <button className={style.back} onClick={() => router.push(`/`)}>
+        {'<'}
+      </button>
+      <p className={style.title}>Создание лобби</p>
+
       <div className={style.lobbySettings}>
         <div className={style.setting}>
-          <b>Игроки</b>
-          <input
-            className={style.input}
-            type="number"
-            id="numberOfPlayers"
-            value={countOfPlayers}
-            max={10}
-            min={3}
-            defaultValue={10}
-            onChange={(event) => {
-              if (
-                Number(event.target.value) <= 10 &&
-                Number(event.target.value) >= 3
-              ) {
-                setCountOfPlayers(Number(event.target.value))
-              } else {
-                setCountOfPlayers(3)
-              }
-            }}
-          />
+          <p className={style.setingTitle}>Игроки</p>
+          <div className={style.inputRow}>
+            <button
+              className={style.buttonInput}
+              onClick={() => {
+                if (countOfPlayers > 3) {
+                  setCountOfPlayers(countOfPlayers - 1)
+                }
+              }}
+            >
+              <p className={style.sign}>-</p>
+            </button>
+
+            <p className={style.count}>{countOfPlayers}</p>
+            <button
+              className={style.buttonInput}
+              onClick={() => {
+                if (countOfPlayers < 10) {
+                  setCountOfPlayers(countOfPlayers + 1)
+                }
+              }}
+            >
+              <p className={style.sign}>+</p>
+            </button>
+          </div>
+        </div>
+
+        <div className={style.setting}>
+          <p className={style.setingTitle}>Раунды</p>
+          <div className={style.inputRow}>
+            <button
+              className={style.buttonInput}
+              onClick={() => {
+                if (countOfRounds > 1) {
+                  setCountOfRounds(countOfRounds - 1)
+                }
+              }}
+            >
+              <p className={style.sign}>-</p>
+            </button>
+
+            <p className={style.count}>{countOfRounds}</p>
+            <button
+              className={style.buttonInput}
+              onClick={() => {
+                if (countOfRounds < 5) {
+                  setCountOfRounds(countOfRounds + 1)
+                }
+              }}
+            >
+              <p className={style.sign}>+</p>
+            </button>
+          </div>
         </div>
         <div className={style.setting}>
-          <b>Раунды</b>
-          <input
-            className={style.input}
-            type="number"
-            id="numberOfrounds"
-            max={5}
-            min={1}
-            defaultValue={3}
-            onChange={(event) => setCountOfRounds(Number(event.target.value))}
-          />
-        </div>
-        <div className={style.setting}>
-          <b>Тип лобби</b>
-          <p>Закрытый</p>
+          <p className={style.setingTitle}>Тип лобби</p>
+          <div className={style.inputRow}>
+            <p className={style.settingChoise}>Закрытый</p>
+          </div>
         </div>
       </div>
 
       <button onClick={createLobby} className={style.createButton}>
-        <b>Создать</b>
+        <p>Создать</p>
       </button>
     </div>
   )

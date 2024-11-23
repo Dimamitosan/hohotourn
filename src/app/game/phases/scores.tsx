@@ -1,9 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
+import style from './styles/scores.module.css'
 
 interface Props {
-  code: any
+  code: string
   seconds: number
   phase: number
 }
@@ -25,16 +26,15 @@ const Scores: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [phase, seconds, code])
 
   return (
-    <div>
-      <h2>Игроки:</h2>
-
-      <ul>
+    <div className={style.playersList}>
+      <h2 className={style.players}>Счет:</h2>
+      <ol className={style.playerRow}>
         {scores.map(([name, score], index) => (
           <li key={index}>
-            {name} : {score}
+            {name}: {score}
           </li>
         ))}
-      </ul>
+      </ol>
     </div>
   )
 }

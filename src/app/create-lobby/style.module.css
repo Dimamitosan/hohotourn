@@ -1,46 +1,85 @@
 .body {
   display: grid;
 }
-.header {
-  padding-top: 20px;
+
+.back {
+  margin: 8vw 0 0 8vw;
+  color: black;
+  cursor: pointer;
+  font-size: 18px;
+  background-color: rgb(253, 229, 170);
+  width: 15vw;
+  height: 15vw;
+  border: none;
+  border-radius: 36px;
+  text-align: center;
 }
 
 .lobbySettings {
-  margin-top: 80px;
+  margin-top: 10vw;
+}
+.title {
+  margin-top: 8vw;
+  font-size: 24px;
 }
 
 .setting {
   display: flex;
   justify-content: space-between;
   background-color: rgb(253 229 170);
-  width: 288px;
-  height: 52px;
+  width: 70vw;
+  height: 15vw;
   margin-bottom: 20px;
   border-radius: 35px;
 }
-.setting > b {
-  margin-left: 25px;
+
+.setingTitle {
+  font-size: 18px;
+  margin-left: 8vw;
+  width: 40%;
 }
-.setting > input {
-  margin-right: 25px;
+
+.settingChoice {
+  font-size: 16px;
 }
-.setting > p {
-  margin-right: 25px;
+
+.inputRow {
+  display: flex;
+  width: 60%;
+}
+
+.buttonInput {
+  width: 10vw;
+  height: 10vw;
+  text-align: center;
+  border: none;
+  border-radius: 35px;
+  background-color: #fff;
+}
+.sign {
+  color: black;
+  padding-bottom: 0.8vw;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+}
+
+.count {
+  text-align: center;
+  width: 6vw;
 }
 
 .createButton {
   color: black;
   cursor: pointer;
-  margin-top: 20vh;
+  margin-top: 30vw;
   font-size: 24px;
   background-color: rgb(253 229 170);
-  width: 288px;
-  height: 52px;
+  width: 70vw;
+  height: 15vw;
   border: none;
   border-radius: 35px;
-}
-
-.input {
-  border: none;
-  background: none;
 }

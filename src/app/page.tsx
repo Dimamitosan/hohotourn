@@ -6,6 +6,7 @@ import { useSocket } from './context/SocketContext'
 import style from './Page.module.css'
 
 export default function Home() {
+  const [canPlay, setCanPlay] = useState<boolean>(true)
   const app = useContext(webAppContext)
   const router = useRouter()
   const socket = useSocket()
@@ -19,32 +20,57 @@ export default function Home() {
     }
   }, [socket, app])
 
+  useEffect(() => {
+    if (app.version && socket) {
+      socket.on('endAnotherSession', () => {
+        setCanPlay(false)
+      })
+      return () => {
+        socket.off('endAnotherSession')
+      }
+    }
+  }, [socket, canPlay])
+
+  if (!canPlay) {
+    return <p>нельзя играть</p>
+  }
   return (
     <>
       {app.version ? (
         <div className={style.page}>
+          <img
+            className={style.roundOrange}
+            src="/roundOrange.svg"
+            alt="roundOrange"
+          />
+          <img
+            className={style.roundBlue}
+            src="/roundBlue.svg"
+            alt="roundBlue"
+          />
           <div className={style.header}>
-            <b>Привет, {app.initDataUnsafe.user?.first_name || 'Dima'}</b>
+            <p>Привет, {app.initDataUnsafe.user?.first_name || 'Dima'}</p>
           </div>
           <div className={style.buttons}>
             <button
+              id={style.enabled}
               disabled={true}
               className={`${style.button} ${style.disabled}`}
             >
-              <b>Найти игру</b>
+              <p className={style.text}>Найти игру</p>
             </button>
 
             <button
               onClick={() => router.push('/join-lobby')}
               className={style.button}
             >
-              <b>Зайти по коду</b>
+              <p className={style.text}>Зайти по коду</p>
             </button>
             <button
               onClick={() => router.push('/create-lobby')}
               className={style.button}
             >
-              <b>Создать комнату</b>
+              <p className={style.text}>Создать комнату</p>
             </button>
           </div>
         </div>

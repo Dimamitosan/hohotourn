@@ -1,0 +1,27 @@
+.content {
+  display: grid;
+}
+.inputQuestion {
+  padding: 4vw;
+  border: none;
+  background-color: rgb(253 229 170);
+  width: 70vw;
+  height: 15vw;
+  color: black;
+  text-align: center;
+  border-radius: 35px;
+  /* margin-bottom: 3vh; */
+}
+
+.sendButton {
+  font-size: 18px;
+  margin-top: 5vh;
+  border: none;
+  background-color: rgb(253 229 170);
+  width: 150px;
+  height: 40px;
+  color: black;
+  text-align: center;
+  border-radius: 35px;
+  margin-bottom: 3vh;
+}

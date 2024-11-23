@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSocket } from '../../context/SocketContext'
+
+import Help from '../modal/modal'
+
 import style from '../style.module.css'
 
 interface LobbyProps {
@@ -20,13 +23,21 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
   const [maxPlayers, setMaxPlayers] = useState<number>(0)
   const [timerStarted, setTimerStarted] = useState<boolean>(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     socket.on('cancelStart', () => {
       setTimerStarted(false)
       setTimer(5)
     })
-  })
+    socket.on('timerStarted', () => {
+      setTimerStarted(true)
+    })
+    return () => {
+      socket.off('cancelStart')
+      socket.off('timerStarted')
+    }
+  }, [timerStarted, timer])
 
   useEffect(() => {
     if (code) {
@@ -71,11 +82,10 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
       }
     })
 
-    // Убираем слушателя при размонтировании компонента
     return () => {
       socket.off('timerUpdate')
     }
-  }, [])
+  }, [timerStarted, timer])
 
   const handleStartGame = () => {
     if (!timerStarted) {
@@ -91,15 +101,27 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
     socket.emit('quitFromLobby', code)
   }
 
+  const openModal = () => setIsModalOpen(true)
+  const closeModal = () => setIsModalOpen(false)
+
   return (
     <div className={style.content}>
-      <b className={style.code}>Код лобби: {code}</b>
-      <b className={style.countOfPlayers}>
+      <p className={style.code}>Код лобби: {code}</p>
+      <p className={style.countOfPlayers}>
         Игроков: {players.length}/{maxPlayers}
-      </b>
-      <h2 className={timerStarted ? style.timer : style.noneTimer}>{timer}</h2>
+      </p>
+      {timerStarted ? (
+        <p className={style.timer}>{timer}</p>
+      ) : (
+        <button className={style.rules} onClick={openModal}>
+          Правила
+        </button>
+      )}
+
+      <Help isOpen={isModalOpen} onClose={closeModal}></Help>
+
       <div className={style.playersList}>
-        <h2 className={style.players}>Игроки:</h2>
+        <h3 className={style.players}>Игроки:</h3>
         <ol className={style.playerRow}>
           {players.map((player) => (
             <li key={player}>{player}</li>
@@ -108,16 +130,23 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
       </div>
       <div className={style.buttons}>
         {lobbyLeader && !isGameStarted ? (
-          <button className={style.button} onClick={handleStartGame}>
-            <b> {timerStarted ? 'Отмена' : 'Начать игру'}</b>
+          <button
+            className={style.button}
+            onClick={handleStartGame}
+            disabled={players.length < 3}
+          >
+            <p>
+              {' '}
+              {players.length < 0
+                ? `Для начала нужно еще ${3 - players.length} игрока`
+                : timerStarted
+                ? 'Отмена'
+                : 'Начать игру'}
+            </p>
           </button>
-        ) : (
-          <button className={style.button}>
-            <b>Готов</b>
-          </button>
-        )}
+        ) : null}
         <button className={style.button} onClick={quit}>
-          <b> Выйти</b>
+          <p>Выйти</p>
         </button>
       </div>
     </div>

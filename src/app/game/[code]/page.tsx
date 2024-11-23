@@ -7,6 +7,8 @@ import WriteQuestions from '../phases/writeQuestions'
 import AnswerOnQuestions from '../phases/answerOnQuestions'
 import VoteForAnswer from '../phases/voteForAnswer'
 
+import style from '../styles/page.module.css'
+
 interface LobbyProps {
   params: any
 }
@@ -49,11 +51,11 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   }, [socket, lobbyLeader])
 
   useEffect(() => {
-    socket.on('changePause', () => {
-      console.log('socketOn changePause', !isPaused)
-      setIsPaused((isPaused) => !isPaused)
+    socket.on('changePause', (pause: boolean) => {
+      console.log('socketOn changePause', pause)
+      setIsPaused(pause)
     })
-  }, [socket]) //isPaused
+  }, [socket, isPaused]) //isPaused
 
   const handleTogglePause = () => {
     console.log(isPaused)
@@ -62,45 +64,57 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   }
 
   return (
-    <div>
-      <h1>Лобби: {code}</h1>
-      {phase === 1 ? (
-        <Scores code={code} seconds={seconds} phase={phase}></Scores>
-      ) : null}
-      {phase === 2 ? (
-        <WriteQuestions
-          code={code}
-          seconds={seconds}
-          phase={phase}
-        ></WriteQuestions>
-      ) : null}
-      {phase === 3 ? (
-        <AnswerOnQuestions
-          code={code}
-          seconds={seconds}
-          phase={phase}
-        ></AnswerOnQuestions>
-      ) : null}
-      {phase === 4 || phase === 5 ? (
-        <VoteForAnswer
-          code={code}
-          seconds={seconds}
-          phase={phase}
-        ></VoteForAnswer>
-      ) : null}
-      время - {seconds}
-      <br />
-      фаза - {phase}
-      <br />
-      <>
+    <div className={style.content}>
+      <div className={style.header}>
+        {/* <p className={style.lobby}>Код лобби: {code}</p> */}
+        <div className={style.timeAndPause}>
+          <p className={style.timer}>{seconds}</p>
+          {lobbyLeader ? (
+            <button className={style.pauseButton} onClick={handleTogglePause}>
+              {isPaused ? 'Продолжить' : 'Пауза'}
+            </button>
+          ) : (
+            <p></p>
+          )}
+        </div>
+      </div>
+      <div className={style.body}>
+        {phase === 1 ? (
+          <Scores code={code} seconds={seconds} phase={phase}></Scores>
+        ) : null}
+        {phase === 2 ? (
+          <WriteQuestions
+            code={code}
+            seconds={seconds}
+            phase={phase}
+          ></WriteQuestions>
+        ) : null}
+        {phase === 3 ? (
+          <AnswerOnQuestions
+            code={code}
+            seconds={seconds}
+            phase={phase}
+          ></AnswerOnQuestions>
+        ) : null}
+        {phase === 4 || phase === 5 ? (
+          <VoteForAnswer
+            code={code}
+            seconds={seconds}
+            phase={phase}
+          ></VoteForAnswer>
+        ) : null}
+
+        {/* <p className={style.phase}> фаза - {phase}</p> */}
+      </div>
+      {/* <div className={style.footer}>
         {lobbyLeader ? (
           <>
-            <button onClick={handleTogglePause}>
-              {isPaused ? 'Продолжить' : 'Пауза'}
+            <button className={style.pauseButton} onClick={handleTogglePause}>
+              {isPaused ? '>' : '||'}
             </button>{' '}
           </>
         ) : null}
-      </>
+      </div> */}
     </div>
   )
 }

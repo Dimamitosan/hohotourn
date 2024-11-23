@@ -49,7 +49,9 @@ export const checkLobbyIsFull = async (socket: any, code: string) => {
     if (!lobby) {
       socket.emit('lobbyStatus', 'Мы не нашли такого лобби(', false)
     } else {
-      if (lobby!.maxPlayers > playersInlobby.length) {
+      if (lobby!.gameStarted === true) {
+        socket.emit('lobbyStatus', 'Игра уже началась, зайти нельзя!', false)
+      } else if (lobby!.maxPlayers > playersInlobby.length) {
         socket.emit('lobbyStatus', 'Мы тебя ждем, заходи скорее!', true)
       } else if (lobby!.maxPlayers === playersInlobby.length) {
         socket.emit('lobbyStatus', 'Это лобби уже заполнено!', false)

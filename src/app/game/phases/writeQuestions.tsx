@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
 
+import style from './styles/writeQuestion.module.css'
+
 interface Props {
   code: any
   seconds: number
@@ -29,25 +31,28 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [phase, seconds, question])
 
   return (
-    <div>
+    <div className={style.content}>
       <input
+        className={style.inputQuestion}
         disabled={questionIsReady}
         type="text"
+        maxLength={44}
         placeholder="Введите вопрос для других игроков"
         value={question}
         onChange={(e) => {
           setQuestion(e.target.value)
         }}
       />
-      {questionIsReady ? null : (
+      {/* {questionIsReady ? null : (
         <button
+          className={style.sendButton}
           onClick={() => {
             setQuestionIsReady(true)
           }}
         >
           Отправить
         </button>
-      )}
+      )} */}
     </div>
   )
 }

@@ -1,0 +1,57 @@
+.content {
+  display: grid;
+}
+.hurryUp {
+  margin-bottom: 4vw;
+}
+.answerArea {
+  width: 90vw;
+  display: flex;
+  margin-top: 5vw;
+}
+.question {
+  display: flex;
+  justify-content: center; /* Горизонтальное центрирование */
+  align-items: center;
+  text-align: center;
+  font-size: 18px;
+  /* margin-top: 5vh; */
+  border: none;
+  background-color: rgb(253 229 170);
+  width: 90vw;
+  min-height: 20vw;
+  max-height: 40vw;
+  color: black;
+  border-radius: 35px;
+
+  padding: 6vw;
+  box-sizing: border-box; /* Учитывать границы и отступы в ширине и высоте */
+  overflow-wrap: break-word; /* Устанавливает перенос длинных слов */
+  word-wrap: break-word; /* Альтернативный способ для старых браузеров */
+  white-space: normal;
+}
+.question > p {
+  width: 100%;
+}
+
+.inputAnswer {
+  height: 15vw;
+  padding: 4vw;
+  text-align: center;
+  border-radius: 35px;
+  border: none;
+  display: grid;
+  background-color: rgb(253 229 170);
+  width: 70vw;
+}
+.sendButton {
+  font-size: 18px;
+  margin-left: 4vw;
+  border: none;
+  background-color: rgb(253 229 170);
+  width: 15vw;
+  height: 15vw;
+  color: black;
+  text-align: center;
+  border-radius: 35px;
+}

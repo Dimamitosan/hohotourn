@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Script from 'next/script'
 import Providers from './providers/providers'
-import styles from './mainStyles/layout.module.css'
+import style from './mainStyles/layout.module.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -40,10 +40,16 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className}`}>
-        <div className={styles.background}>
-          <div className={styles.game}>
+        <div className={style.body}>
+          <div className={style.game}>
             <Providers>{children}</Providers>
           </div>
+
+          <img
+            className={style.pinkVector}
+            src="/pinkVector.svg"
+            alt="pinkVector"
+          />
         </div>
       </body>
     </html>

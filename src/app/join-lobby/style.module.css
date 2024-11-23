@@ -2,31 +2,106 @@
   display: grid;
 }
 
+.back {
+  margin: 8vw 0 50vw 8vw;
+  color: black;
+  cursor: pointer;
+  font-size: 18px;
+  background-color: rgb(253, 229, 170);
+  width: 15vw;
+  height: 15vw;
+  border: none;
+  border-radius: 36px;
+  text-align: center;
+}
+
 .insertCode {
-  padding-top: 10vh;
   font-size: 24px;
+}
+
+.inputContainer {
+  margin-top: 5vw;
+  display: flex;
+  position: relative;
+  align-items: center;
+  margin-bottom: 6vw;
+  justify-content: start;
+  width: 72vw;
 }
 
 .input {
-  margin-top: 5vh;
+  margin-left: 0;
+  z-index: 1;
+  font-size: 20px;
   border: none;
   background-color: rgb(253 229 170);
-  width: 288px;
-  height: 52px;
+  width: 70vw;
+  height: 15vw;
   color: black;
   text-align: center;
   border-radius: 35px;
-  margin-bottom: 3vh;
 }
 
-.button {
+@keyframes slideout {
+  from {
+    width: 70vw;
+  }
+
+  to {
+    width: 54vw;
+  }
+}
+
+.inputDone {
+  margin-left: 0;
+  justify-self: start;
+  z-index: 1;
+  font-size: 20px;
+  border: none;
+  background-color: rgb(253 229 170);
+  width: 54vw;
+  height: 15vw;
+  color: black;
+  text-align: center;
+  border-radius: 35px;
+  text-align: center;
+  animation-duration: 1s;
+  animation-name: slideout;
+  opacity: 1;
+}
+
+.inputButton {
+  position: absolute;
+  z-index: 0;
+
   color: black;
   cursor: pointer;
-  /* margin-bottom: 5vh; */
-  font-size: 24px;
-  background-color: rgb(253 229 170);
-  width: 288px;
-  height: 52px;
+  font-size: 18px;
+  background-color: rgb(253, 229, 170);
+  width: 15vw;
+  height: 15vw;
   border: none;
-  border-radius: 35px;
+  border-radius: 36px;
+  text-align: center;
+  opacity: 0;
+}
+
+@keyframes slidein {
+  from {
+    margin-left: 0vw;
+  }
+
+  to {
+    margin-left: 56vw;
+  }
+}
+
+.inputButton.visible {
+  z-index: 0;
+  width: 15vw;
+  height: 15vw;
+  margin-left: 56vw;
+  animation-duration: 1s;
+  animation-name: slidein;
+  opacity: 1;
 }

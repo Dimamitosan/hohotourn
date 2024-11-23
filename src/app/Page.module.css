@@ -1,28 +1,50 @@
 .page {
-  padding-bottom: 20px;
+  /* padding-bottom: 20px; */
 }
 .header {
-  padding: 150px 50px 0 0;
+  padding: 30vw 15vw 30vw 0;
   text-align: right;
 }
 
 .buttons {
   display: grid;
-  margin-top: 25vh;
+  margin-top: 15vw;
 }
 
 .button {
   color: black;
   background-color: rgb(253, 229, 170);
-  width: 288px;
-  height: 52px;
+  width: 70vw;
+  height: 15vw;
   border-radius: 35px;
   border: none;
-  margin-top: 30px;
+  margin-top: 5vw;
   font-size: 20px;
   cursor: pointer;
 }
 
 .disabled {
   opacity: 50%;
+}
+
+#enabled {
+  cursor: default;
+}
+
+.text {
+  font-size: 20px;
+}
+.roundOrange {
+  position: absolute;
+  width: auto;
+  height: 35vw;
+  top: 15vw;
+  left: 3vw;
+}
+.roundBlue {
+  position: absolute;
+  width: auto;
+  height: 35vw;
+  top: 45vw;
+  right: 12vw;
 }

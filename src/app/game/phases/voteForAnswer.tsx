@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
 
+import style from './styles/voteForAnswer.module.css'
+
 interface Props {
   code: any
   seconds: number
@@ -77,56 +79,94 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [arrOfPlayersVotes])
 
   return (
-    <div>
-      вопрос:
-      {phase === 4
-        ? strangersQuestion
-        : `${strangersQuestion} - ${ownerOfQuestion}`}
-      <br />
-      первый ответ
-      {phase === 4
-        ? strangersAnswers[0]
-        : `${strangersAnswers[0]} - ${ownerOfFirstAnswer}`}
-      <br />
-      второй ответ
-      {phase === 4
-        ? strangersAnswers[1]
-        : `${strangersAnswers[1]} - ${ownerOfSecondAnswer}`}
-      <br />
-      номер вопроса
-      {numberOfQuestion}
-      <br />
-      {phase === 4 ? (
-        canVote ? (
+    <div className={style.content}>
+      {phase === 5 && (
+        <p className={style.ownerOfQuestion}>{ownerOfQuestion}</p>
+      )}
+
+      <div className={style.question}>
+        <p>{strangersQuestion}</p>
+      </div>
+
+      {phase === 4 && (
+        <p>{canVote ? 'Выберите лучший ответ!' : 'Вы не голосуете!'}</p>
+      )}
+
+      <div className={style.answerArea}>
+        <div className={style.numberOfQuestion}>
+          {/* <p>Первый ответ: </p> */}
+          {phase === 5 ? (
+            <p className={style.owner}>{ownerOfFirstAnswer}</p>
+          ) : null}
+        </div>
+        {/* <p >Первый ответ</p> */}
+        {/* {phase === 4 ? ( */}
+
+        <button
+          className={`${style.answerButton} ${
+            phase === 5 ? style.disabled : null
+          }`}
+          disabled={phase === 4 ? !canVote : true}
+          onClick={() => {
+            socket.emit('voteForAnswer', 1)
+          }}
+        >
+          <p>{strangersAnswers[0]}</p>
+        </button>
+        {/* ) : (
           <div>
-            <button
-              onClick={() => {
-                socket.emit('voteForAnswer', 1)
-              }}
-            >
-              первый ответ
-            </button>
-            <button
-              onClick={() => {
-                socket.emit('voteForAnswer', 2)
-              }}
-            >
-              второй ответ
-            </button>
+            <p className={style.owner}>{ownerOfFirstAnswer}</p>
+            <p className={style.answer}>{strangersAnswers[0]}</p>
           </div>
-        ) : null
-      ) : (
-        <div>
-          <ul>
-            голоса за первый ответ
+        )} */}
+      </div>
+      <div className={style.answerArea}>
+        <div className={style.numberOfQuestion}>
+          {/* <p>Второй ответ</p> */}
+          {phase === 5 ? (
+            <p className={style.owner}>{ownerOfSecondAnswer}</p>
+          ) : null}
+        </div>
+        {/* <p className={style.numberOfQuestion}>Второй ответ</p> */}
+        {/* {phase === 4 ? ( */}
+        {/* {phase === 5 ? (
+          <p className={style.owner}>{ownerOfSecondAnswer}</p>
+        ) : null} */}
+        <button
+          className={`${style.answerButton} ${
+            phase === 5 ? style.disabled : null
+          }`}
+          disabled={phase === 4 ? !canVote : true}
+          onClick={() => {
+            socket.emit('voteForAnswer', 2)
+          }}
+        >
+          <p>{strangersAnswers[1]}</p>
+        </button>
+        {/* ) : (
+          <div>
+            <p className={style.owner}>{ownerOfSecondAnswer}</p>
+            <p className={style.answer}>{strangersAnswers[1]}</p>
+          </div>
+        )} */}
+      </div>
+
+      {phase === 5 && (
+        <div className={style.votes}>
+          <ul className={style.ul}>
+            Голоса за первый ответ
             {arrOfPlayersVotes[0].map((nick: string, index: number) => (
-              <li key={index}>{nick}</li>
+              <li className={style.li} key={index}>
+                {nick}
+              </li>
             ))}
           </ul>
-          <ul>
-            голоса за второй ответ
+          <ul className={style.ul}>
+            Голоса за второй ответ
             {arrOfPlayersVotes[1].map((nick: string, index: number) => (
-              <li key={index}>{nick}</li>
+              <li className={style.li} key={index}>
+                {nick}
+              </li>
             ))}
           </ul>
         </div>

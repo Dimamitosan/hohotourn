@@ -36,24 +36,49 @@ async function getArrOfVotes(code: any) {
   return arr
 }
 
-function getRandomNumbers(n: number) {
-  const numbers = Array.from({ length: n }, (_, i) => i + 1)
-  for (let i = numbers.length - 1; i > 0; i--) {
+function shuffleArray(array: any[]): string[] {
+  for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[numbers[i], numbers[j]] = [numbers[j], numbers[i]]
+    ;[array[i], array[j]] = [array[j], array[i]]
   }
-  return numbers
+  return array
 }
 
 export const setNumbers = async (socket: any, code: string) => {
-  const countOfUsers = User.findAll({ where: { lobbyCode: code } })
-  const rundomArr = getRandomNumbers((await countOfUsers).length)
-  countOfUsers.then((arr) => {
-    arr.map(async (user) => {
-      await User.update({ number: rundomArr.pop() }, { where: { id: user.id } })
-    })
+  const players = await User.findAll({
+    where: {
+      lobbyCode: code,
+    },
+  })
+  const usersSockets = players.map((user) => user.socket)
+
+  const shuffledSockets = shuffleArray(usersSockets)
+
+  shuffledSockets.map(async (randomSocket) => {
+    await User.update(
+      { number: shuffledSockets.indexOf(randomSocket) + 1 },
+      { where: { socket: randomSocket } }
+    )
   })
 }
+// function getRandomNumbers(n: number) {
+//   const numbers = Array.from({ length: n }, (_, i) => i + 1)
+//   for (let i = numbers.length - 1; i > 0; i--) {
+//     const j = Math.floor(Math.random() * (i + 1))
+//     ;[numbers[i], numbers[j]] = [numbers[j], numbers[i]]
+//   }
+//   return numbers
+// }
+
+// export const setNumbers = async (socket: any, code: string) => {
+//   const countOfUsers = User.findAll({ where: { lobbyCode: code } })
+//   const rundomArr = getRandomNumbers((await countOfUsers).length)
+//   countOfUsers.then((arr) => {
+//     arr.map(async (user) => {
+//       await User.update({ number: rundomArr.pop() }, { where: { id: user.id } })
+//     })
+//   })
+// }
 
 export const startGameTimer = async (socket: any, code: string) => {
   const lobby = await Lobby.findOne({
@@ -76,7 +101,7 @@ export const startGameTimer = async (socket: any, code: string) => {
     console.log('emit changePause')
     paused = !paused
     console.log(paused)
-    io.to(code).emit('changePause')
+    io.to(code).emit('changePause', paused)
   })
   if (gameTimerValue === 5) {
     const intervalId = setInterval(async () => {

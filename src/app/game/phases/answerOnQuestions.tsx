@@ -2,8 +2,10 @@
 import { useEffect, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
 
+import style from './styles/answerOnQuestion.module.css'
+
 interface Props {
-  code: any
+  code: string
   seconds: number
   phase: number
 }
@@ -41,46 +43,68 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [phase, seconds])
 
   return (
-    <div>
-      {firstQuestion}
-      <input
-        disabled={firstAnswerIsReady}
-        type="text"
-        placeholder="Введите ответ на вопрос"
-        value={firstAnswer}
-        onChange={(e) => {
-          setFirstAnswer(e.target.value)
-        }}
-      />
-      {firstAnswerIsReady ? null : (
-        <button
-          onClick={() => {
-            setFirstAnswerIsReady(true)
-          }}
-        >
-          Отправить
-        </button>
-      )}
+    <div className={style.content}>
+      {!firstAnswerIsReady ? (
+        <>
+          <p className={style.hurryUp}>Поторопись, тебя ждет второй вопрос!</p>
+          <div className={style.question}>
+            <p>{firstQuestion}</p>
+          </div>
+          <div className={style.answerArea}>
+            <input
+              className={style.inputAnswer}
+              disabled={firstAnswerIsReady}
+              type="text"
+              maxLength={44}
+              placeholder="Введите ответ на вопрос"
+              value={firstAnswer}
+              onChange={(e) => {
+                setFirstAnswer(e.target.value)
+              }}
+            />
 
-      {secondQuestion}
-      <input
-        disabled={secondAnswerIsReady}
-        type="text"
-        placeholder="Введите ответ на вопрос"
-        value={secondAnswer}
-        onChange={(e) => {
-          setSecondAnswer(e.target.value)
-        }}
-      />
-      {secondAnswerIsReady ? null : (
-        <button
-          onClick={() => {
-            setSecondAnswerIsReady(true)
-          }}
-        >
-          Отправить
-        </button>
-      )}
+            <button
+              className={style.sendButton}
+              onClick={() => {
+                setFirstAnswerIsReady(true)
+              }}
+            >
+              {'>'}
+            </button>
+          </div>
+        </>
+      ) : null}
+
+      {firstAnswerIsReady ? (
+        <>
+          <div className={style.question}>
+            <p>{secondQuestion}</p>
+          </div>
+          <div className={style.answerArea}>
+            <input
+              className={style.inputAnswer}
+              disabled={secondAnswerIsReady}
+              type="text"
+              maxLength={44}
+              placeholder="Введите ответ на вопрос"
+              value={secondAnswer}
+              onChange={(e) => {
+                setSecondAnswer(e.target.value)
+              }}
+            />
+
+            <button
+              className={style.sendButton}
+              disabled={secondAnswerIsReady}
+              onClick={() => {
+                setSecondAnswerIsReady(true)
+              }}
+            >
+              {'>'}
+            </button>
+          </div>
+        </>
+      ) : null}
     </div>
   )
 }
