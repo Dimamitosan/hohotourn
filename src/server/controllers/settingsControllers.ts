@@ -3,10 +3,42 @@ import Lobby from '../../models/Lobby'
 import { io } from '../index'
 
 export const userEnter = async (socket: any, [telegramId, nick]: any) => {
-  const haveSocket = await User.findOne({ where: { telegramId } }).then(
-    (user) => user?.socket
+  const user = await User.findOne({ where: { telegramId } }).then(
+    (user) => user
   )
+  if (!user) {
+    try {
+      await User.findOrCreate({
+        where: { telegramId },
+        defaults: { nick, coins: 0, score: 0 },
+      })
+      await User.update(
+        {
+          socket: socket.id,
+          lobbyCode: null,
+          lobbyLeader: null,
+          score: 0,
+          number: null,
+          question: null,
+          firstAnswer: null,
+          secondAnswer: null,
+          voteNumber: null,
+        },
+        { where: { telegramId } }
+      )
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  const readyUser = await User.findOne({ where: { telegramId } }).then(
+    (user) => user
+  )
+
+  const haveSocket = readyUser?.socket
+
   console.log(haveSocket, 'aaaaaaa', socket.id)
+
   if (haveSocket !== null && socket.id !== haveSocket) {
     socket.emit('endAnotherSession')
   } else {
@@ -53,6 +85,8 @@ export const disconnect = async (socket: any) => {
         number: null,
         voteNumber: null,
         socket: null,
+        firstAnswer: null,
+        secondAnswer: null,
         score: 0,
       },
       { where: { socket: socket.id } }

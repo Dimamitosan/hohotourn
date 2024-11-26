@@ -6,6 +6,7 @@ interface LobbyAttributes {
   gameStarted: boolean
   maxPlayers: number
   countOfRounds: number
+  usedQuestions: string
 }
 
 interface LobbyCreationAttributes
@@ -19,6 +20,7 @@ class Lobby
   public gameStarted!: boolean
   public maxPlayers!: number
   public countOfRounds!: number
+  public usedQuestions!: string
 }
 
 Lobby.init(
@@ -39,6 +41,10 @@ Lobby.init(
     },
     countOfRounds: {
       type: DataTypes.NUMBER,
+      allowNull: false,
+    },
+    usedQuestions: {
+      type: DataTypes.STRING,
       allowNull: false,
     },
   },

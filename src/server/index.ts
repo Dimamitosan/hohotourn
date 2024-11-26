@@ -11,12 +11,14 @@ import {
 import {
   sendQuestion,
   getScores,
-  setNumbers,
+  // setNumbers,
   findLobbyLeader,
   startGameTimer,
   sendAnswers,
   getStragersQuestion,
   voteForAnswer,
+  requestRandomQuestion,
+  requestQuestions,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter, disconnect } from './controllers/settingsControllers'
@@ -28,6 +30,8 @@ sequelize.sync({}).then(() => {
 
 const httpServer = createServer()
 export const io = new Server(httpServer, {
+  pingTimeout: 80000, // максимальное время ожидания пинга в миллисекундах (по умолчанию 20000)
+  pingInterval: 25000, // интервал пинга в миллисекундах (по умолчанию 25000)
   cors: {
     origin: '*',
   },
@@ -70,16 +74,22 @@ io.on('connection', (socket) => {
     startGameTimer(socket, code)
   })
 
-  socket.on('sendQuestion', ([question, code]: string[]) =>
-    sendQuestion(socket, [question, code])
+  socket.on('sendQuestion', (question: string) =>
+    sendQuestion(socket, question)
   )
 
   socket.on('getStragersQuestion', ([code, number]) => {
     getStragersQuestion(socket, [code, number])
   })
 
-  socket.on('setNumbers', (code) => {
-    setNumbers(socket, code)
+  socket.on('requestQuestions', (code) => {
+    requestQuestions(socket, code)
+  })
+  // socket.on('setNumbers', (code) => {
+  //   setNumbers(socket, code)
+  // })
+  socket.on('requestRandomQuestion', (code) => {
+    requestRandomQuestion(socket, code)
   })
 
   socket.on('voteForAnswer', (answerNumber) => {

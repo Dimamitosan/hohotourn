@@ -7,7 +7,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<any>(null)
 
   useEffect(() => {
-    const newSocket = io('https://server.ru.tuna.am') // Ваш URL сервера
+    const newSocket = io('https://server.ru.tuna.am')
     setSocket(newSocket)
 
     // Отключаем сокет только при размонтировании приложения

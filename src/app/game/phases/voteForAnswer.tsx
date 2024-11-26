@@ -32,7 +32,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [socket, numberOfQuestion])
 
   useEffect(() => {
-    if (phase === 4 && seconds === 10 && canChangeAnswer) {
+    if (phase === 4 && seconds === 15 && canChangeAnswer) {
       socket.emit('getStragersQuestion', [code, numberOfQuestion])
       socket.on(
         'takeStragersQuestion',

@@ -19,6 +19,15 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   const socket = useSocket()
 
   useEffect(() => {
+    if (phase === 3 && seconds === 60) {
+      socket.emit('requestQuestions', code)
+    }
+    return () => {
+      socket.off('requestQuestions')
+    }
+  }, [seconds, phase])
+
+  useEffect(() => {
     socket.on('getQuestions', (data: Array<string>) => {
       setFirstQuestion(data[0])
       setSecondQuestion(data[1])
@@ -31,8 +40,6 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
 
       setFirstAnswer('')
       setSecondAnswer('')
-      console.log('sended answers')
-      console.log('trying to get strangers data')
       setFirstAnswerIsReady(false)
       setSecondAnswerIsReady(false)
     }

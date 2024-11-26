@@ -11,30 +11,43 @@ interface Props {
 }
 const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   const [question, setQuestion] = useState<string>('')
-  const [questionIsReady, setQuestionIsReady] = useState<boolean>(false)
+
+  const [canGetRandomQuestion, setCanGetRandomQuestion] =
+    useState<boolean>(true)
   const socket = useSocket()
 
   useEffect(() => {
-    if (phase === 2 && seconds === 0) {
+    if (phase === 2 && seconds <= 2) {
       //ввод вопросов, в конце они отправляются и получаются чужие вопросы
 
-      socket.emit('setNumbers', code)
-      socket.emit('sendQuestion', [question, code])
-      setQuestionIsReady(false)
+      setCanGetRandomQuestion(true)
+      socket.emit('sendQuestion', question)
     }
 
-    setQuestionIsReady(false)
     return () => {
       socket.off('setNumbers')
       socket.off('sendQuestion')
     }
   }, [phase, seconds, question])
 
+  useEffect(() => {
+    socket.on('getRandomQuestion', (randomQuestion: string) => {
+      setQuestion(randomQuestion)
+      setCanGetRandomQuestion(false)
+    })
+    return () => {
+      socket.off('getRandomQuestion')
+    }
+  }, [socket, question, canGetRandomQuestion])
+
+  const getRandomQuestion = () => {
+    socket.emit('requestRandomQuestion', code)
+  }
+
   return (
     <div className={style.content}>
       <input
         className={style.inputQuestion}
-        disabled={questionIsReady}
         type="text"
         maxLength={44}
         placeholder="Введите вопрос для других игроков"
@@ -43,16 +56,14 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
           setQuestion(e.target.value)
         }}
       />
-      {/* {questionIsReady ? null : (
-        <button
-          className={style.sendButton}
-          onClick={() => {
-            setQuestionIsReady(true)
-          }}
-        >
-          Отправить
-        </button>
-      )} */}
+
+      <button
+        disabled={!canGetRandomQuestion}
+        className={style.randomQuestion}
+        onClick={getRandomQuestion}
+      >
+        Случайный вопрос
+      </button>
     </div>
   )
 }

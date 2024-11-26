@@ -10,6 +10,7 @@ interface Props {
 }
 const Scores: React.FC<Props> = ({ code, seconds, phase }) => {
   const [scores, setScores] = useState<any[]>([])
+
   const socket = useSocket()
 
   useEffect(() => {

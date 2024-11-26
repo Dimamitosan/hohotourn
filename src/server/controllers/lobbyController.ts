@@ -19,6 +19,7 @@ export const createLobby = async (
       gameStarted: false,
       maxPlayers: countOfPlayers,
       countOfRounds,
+      usedQuestions: '',
     })
     await User.update(
       { lobbyCode: code, lobbyLeader: true },

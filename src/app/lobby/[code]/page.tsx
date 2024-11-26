@@ -137,7 +137,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
           >
             <p>
               {' '}
-              {players.length < 0
+              {players.length < 3
                 ? `Для начала нужно еще ${3 - players.length} игрока`
                 : timerStarted
                 ? 'Отмена'

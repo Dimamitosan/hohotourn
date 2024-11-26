@@ -32,7 +32,7 @@ export default function Home() {
   }, [socket, canPlay])
 
   if (!canPlay) {
-    return <p>нельзя играть</p>
+    return <p>Закончите прошлую сессию и перезайдите</p>
   }
   return (
     <>
@@ -57,7 +57,7 @@ export default function Home() {
               disabled={true}
               className={`${style.button} ${style.disabled}`}
             >
-              <p className={style.text}>Найти игру</p>
+              <p className={style.text}>Открытые комнаты</p>
             </button>
 
             <button

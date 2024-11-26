@@ -3,6 +3,8 @@ import User from '../../models/User'
 import { io } from '../index'
 import { where } from 'sequelize'
 import Lobby from '@/models/Lobby'
+import arrOfQuestions from '../questions'
+
 const { Op } = require('sequelize')
 
 //
@@ -44,12 +46,13 @@ function shuffleArray(array: any[]): string[] {
   return array
 }
 
-export const setNumbers = async (socket: any, code: string) => {
+const setNumbers = async (code: string) => {
   const players = await User.findAll({
     where: {
       lobbyCode: code,
     },
   })
+
   const usersSockets = players.map((user) => user.socket)
 
   const shuffledSockets = shuffleArray(usersSockets)
@@ -60,6 +63,7 @@ export const setNumbers = async (socket: any, code: string) => {
       { where: { socket: randomSocket } }
     )
   })
+  console.log(usersSockets, shuffledSockets, 'aaaaaaaaaaaaaaaaaa')
 }
 // function getRandomNumbers(n: number) {
 //   const numbers = Array.from({ length: n }, (_, i) => i + 1)
@@ -107,6 +111,14 @@ export const startGameTimer = async (socket: any, code: string) => {
     const intervalId = setInterval(async () => {
       if (!paused) {
         gameTimerValue -= 1
+        const lobbyCountOfPlayers = (
+          await User.findAll({ where: { lobbyCode: code } })
+        ).length
+        if (lobbyCountOfPlayers === 0) {
+          await Lobby.destroy({ where: { lobbyCode: code } })
+          console.log('timer cleared')
+          clearInterval(intervalId)
+        }
         if (gameTimerValue < 0 && gamePhase === 1) {
           await User.update(
             {
@@ -116,16 +128,17 @@ export const startGameTimer = async (socket: any, code: string) => {
             { where: { socket: socket.id } }
           )
 
-          gameTimerValue = 10
+          gameTimerValue = 30
           gamePhase = 2
         }
         if (gameTimerValue < 0 && gamePhase === 2) {
-          gameTimerValue = 10
+          setNumbers(code)
+          gameTimerValue = 60
           gamePhase = 3
         }
 
         if (gameTimerValue < 0 && gamePhase === 3) {
-          gameTimerValue = 10
+          gameTimerValue = 15
           gamePhase = 4
         }
         if (gameTimerValue < 0 && gamePhase === 4) {
@@ -220,7 +233,7 @@ export const startGameTimer = async (socket: any, code: string) => {
             newNumberOfQuestion < countOfQuestions &&
             roundNumber <= countOfRounds
           ) {
-            gameTimerValue = 10
+            gameTimerValue = 15
             gamePhase = 4
           } else if (
             newNumberOfQuestion === countOfQuestions &&
@@ -232,7 +245,7 @@ export const startGameTimer = async (socket: any, code: string) => {
             newNumberOfQuestion = 0
           }
         }
-        if (gameTimerValue === 10 && gamePhase === 4) {
+        if (gameTimerValue === 15 && gamePhase === 4) {
           newNumberOfQuestion++
           console.log('numberOfQuestion changed!')
           setTimeout(() => {}, 1000)
@@ -305,22 +318,28 @@ export const getStragersQuestion = async (socket: any, [code, number]: any) => {
       where: { lobbyCode: code, number: firstUserNumber },
     })
 
-    const firstStrangerAnswer = userForFirstStrangerAnswer?.firstAnswer
+    const firstStrangerAnswer = userForFirstStrangerAnswer?.secondAnswer
     const firstStrangersNick = userForFirstStrangerAnswer?.nick
 
     const userForSecondStrangerAnswer = await User.findOne({
       where: { lobbyCode: code, number: secondUserNumber },
     })
 
-    const secondStrangerAnswer = userForSecondStrangerAnswer?.secondAnswer
+    const secondStrangerAnswer = userForSecondStrangerAnswer?.firstAnswer
     const secondStrangerNick = userForSecondStrangerAnswer?.nick
 
-    console.log('stranger questions sended')
     const strangersAnswers = [
       [firstStrangerAnswer, firstStrangersNick],
       [secondStrangerAnswer, secondStrangerNick],
     ]
-
+    console.log(
+      'get starangers question and answers:',
+      firstStrangerAnswer,
+      firstUserNumber,
+      secondStrangerAnswer,
+      secondUserNumber,
+      number
+    )
     socket.emit('takeStragersQuestion', [
       strangersAnswers,
       [question, ownerOfQuestion],
@@ -329,45 +348,44 @@ export const getStragersQuestion = async (socket: any, [code, number]: any) => {
   }, 100)
 }
 
-export const sendQuestion = async (socket: any, [question, code]: string[]) => {
+export const sendQuestion = async (socket: any, question: string) => {
   await User.update({ question: question }, { where: { socket: socket.id } })
-
+}
+export const requestQuestions = async (socket: any, code: string) => {
   const countOfPlayers = await User.count({ where: { lobbyCode: code } })
 
-  setTimeout(async () => {
-    const userNumber = await User.findOne({
-      where: { socket: socket.id },
+  const userNumber = await User.findOne({
+    where: { socket: socket.id },
+  })
+  if (userNumber && userNumber.number) {
+    const firstUserForQuestion = await User.findOne({
+      where: {
+        lobbyCode: code,
+        number: (userNumber?.number % countOfPlayers) + 1,
+      },
     })
-    if (userNumber && userNumber.number) {
-      const firstUserForQuestion = await User.findOne({
-        where: {
-          lobbyCode: code,
-          number: (userNumber?.number % countOfPlayers) + 1,
-        },
-      })
-      const secondUserForQuestion = await User.findOne({
-        where: {
-          lobbyCode: code,
-          number: ((userNumber?.number + 1) % countOfPlayers) + 1,
-        },
-      })
+    const secondUserForQuestion = await User.findOne({
+      where: {
+        lobbyCode: code,
+        number: ((userNumber?.number + 1) % countOfPlayers) + 1,
+      },
+    })
 
-      console.log(
-        firstUserForQuestion?.question,
-        firstUserForQuestion?.number,
-        secondUserForQuestion?.question,
-        secondUserForQuestion?.number,
+    // console.log(
+    //   firstUserForQuestion?.question,
+    //   firstUserForQuestion?.number,
+    //   secondUserForQuestion?.question,
+    //   secondUserForQuestion?.number,
 
-        userNumber.number,
-        socket.id,
-        '------------вопросы'
-      )
-      socket.emit('getQuestions', [
-        firstUserForQuestion?.question,
-        secondUserForQuestion?.question,
-      ])
-    }
-  }, 1000)
+    //   userNumber.number,
+    //   socket.id,
+    //   '------------вопросы'
+    // )
+    socket.emit('getQuestions', [
+      firstUserForQuestion?.question,
+      secondUserForQuestion?.question,
+    ])
+  }
 }
 
 export const voteForAnswer = async (socket: any, answerNumber: number) => {
@@ -386,5 +404,29 @@ export const getScores = async (socket: any, code: string) => {
     socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
   } catch (e) {
     console.log('ошибка -', e)
+  }
+}
+
+export const requestRandomQuestion = async (socket: any, code: string) => {
+  const prevQuestions = await Lobby.findOne({
+    where: { lobbyCode: code },
+  }).then((lobby) => lobby?.usedQuestions)
+  console.log(prevQuestions)
+  console.log(0, arrOfQuestions[0])
+  if (prevQuestions!.split(',').length - 1 >= arrOfQuestions.length) {
+    socket.emit('getRandomQuestion', 'Вопросы кончились :-(')
+  } else {
+    let questionId
+    do {
+      questionId = Math.floor(Math.random() * arrOfQuestions.length)
+    } while (prevQuestions!.includes(`${questionId}, `))
+    const newUsedQuestions = `${prevQuestions}${questionId}, `
+    await Lobby.update(
+      { usedQuestions: newUsedQuestions },
+      { where: { lobbyCode: code } }
+    )
+
+    const newQuestion = arrOfQuestions[questionId]
+    socket.emit('getRandomQuestion', newQuestion)
   }
 }
