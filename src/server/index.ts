@@ -23,6 +23,13 @@ import {
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter, disconnect } from './controllers/settingsControllers'
 
+import bot from './bot/telegramBot'
+import dotenv from 'dotenv'
+
+dotenv.config({ path: '../../.env' })
+
+const webAppUrl = process.env.WEBAPPURL
+
 sequelize.sync({}).then(() => {
   // force: true убрал
   console.log('Database & tables created!')
@@ -38,6 +45,37 @@ export const io = new Server(httpServer, {
 })
 
 //server
+
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id
+  const text = msg.text
+
+  if (text === '/start') {
+    if (webAppUrl) {
+      await bot.sendMessage(chatId, 'Для игры нажмите кнопку ниже', {
+        reply_markup: {
+          inline_keyboard: [[{ text: 'играть', web_app: { url: webAppUrl } }]],
+        },
+      })
+    }
+  }
+  if (text === '/rules') {
+    if (webAppUrl) {
+      await bot.sendMessage(
+        chatId,
+        `Как играть? \n1 - Создайте лобби или подключитесь к уже существующему по коду\n2 - Дождитесь начала игры (для игры нужно минимум 3 игрока)\n3 - Введите шуточный вопрос (или используйте случайный вопрос из уже заготовленных) \nЭтот вопрос получат 2 игрока и им надо будет на него ответить\n4 - Ответьте в шуточной форме на два вопроса от других игроков\n5 - Голосуйте за лучший ответ!`
+      )
+    }
+  }
+  if (text === '/form') {
+    if (webAppUrl) {
+      await bot.sendMessage(
+        chatId,
+        `Если у вас вылезла ошибка, или есть предложения по улучшению игры\nВы можете заполнить форму по ссылке - https://forms.yandex.ru/u/67466767d046881f6de9857e/`
+      )
+    }
+  }
+})
 
 io.on('connection', (socket) => {
   socket.setMaxListeners(100)

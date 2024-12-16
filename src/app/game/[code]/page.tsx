@@ -66,7 +66,6 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   return (
     <div className={style.content}>
       <div className={style.header}>
-        {/* <p className={style.lobby}>Код лобби: {code}</p> */}
         <div className={style.timeAndPause}>
           <p className={style.timer}>{seconds}</p>
           {lobbyLeader ? (
@@ -103,18 +102,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
             phase={phase}
           ></VoteForAnswer>
         ) : null}
-
-        {/* <p className={style.phase}> фаза - {phase}</p> */}
       </div>
-      {/* <div className={style.footer}>
-        {lobbyLeader ? (
-          <>
-            <button className={style.pauseButton} onClick={handleTogglePause}>
-              {isPaused ? '>' : '||'}
-            </button>{' '}
-          </>
-        ) : null}
-      </div> */}
     </div>
   )
 }

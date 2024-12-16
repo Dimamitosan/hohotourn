@@ -63,7 +63,7 @@ const setNumbers = async (code: string) => {
       { where: { socket: randomSocket } }
     )
   })
-  console.log(usersSockets, shuffledSockets, 'aaaaaaaaaaaaaaaaaa')
+  // console.log(usersSockets, shuffledSockets, 'aaaaaaaaaaaaaaaaaa')
 }
 // function getRandomNumbers(n: number) {
 //   const numbers = Array.from({ length: n }, (_, i) => i + 1)

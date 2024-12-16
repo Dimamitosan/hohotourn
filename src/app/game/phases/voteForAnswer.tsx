@@ -52,7 +52,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
           setCanVote(canVote)
         }
       )
-      console.log(strangersAnswers, strangersQuestion, canVote)
+      // console.log(strangersAnswers, strangersQuestion, canVote)
       setCanChangeAnswer(false)
     }
     return () => {

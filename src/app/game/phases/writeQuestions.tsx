@@ -49,7 +49,7 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
       <input
         className={style.inputQuestion}
         type="text"
-        maxLength={44}
+        maxLength={75}
         placeholder="Введите вопрос для других игроков"
         value={question}
         onChange={(e) => {
