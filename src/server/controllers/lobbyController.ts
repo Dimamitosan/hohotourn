@@ -10,7 +10,7 @@ const generateLobbyCode = () => {
 
 export const createLobby = async (
   socket: any,
-  [countOfPlayers, countOfRounds]: number[]
+  [countOfPlayers, countOfRounds, isLobbyOpen]: [number, number, boolean]
 ) => {
   const code = generateLobbyCode()
   try {
@@ -20,6 +20,8 @@ export const createLobby = async (
       maxPlayers: countOfPlayers,
       countOfRounds,
       usedQuestions: '',
+      isOpen: isLobbyOpen,
+      countOfPlayers: 0,
     })
     await User.update(
       { lobbyCode: code, lobbyLeader: true },
@@ -41,6 +43,14 @@ export const quitFromLobby = async (socket: any, code: string) => {
   await User.update(
     { lobbyCode: null, lobbyLeader: null },
     { where: { socket: socket.id } }
+  )
+  const countOfPlayers = await Lobby.findOne({
+    where: { lobbyCode: code },
+  }).then((lobby) => lobby!.countOfPlayers)
+
+  await Lobby.update(
+    { countOfPlayers: countOfPlayers - 1 },
+    { where: { lobbyCode: code } }
   )
 
   const playersInLobby = await User.findAll({

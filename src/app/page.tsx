@@ -53,9 +53,8 @@ export default function Home() {
           </div>
           <div className={style.buttons}>
             <button
-              id={style.enabled}
-              disabled={true}
-              className={`${style.button} ${style.disabled}`}
+              className={style.button}
+              onClick={() => router.push('/openLobbies')}
             >
               <p className={style.text}>Открытые комнаты</p>
             </button>

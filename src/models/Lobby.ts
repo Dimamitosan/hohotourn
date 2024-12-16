@@ -7,6 +7,8 @@ interface LobbyAttributes {
   maxPlayers: number
   countOfRounds: number
   usedQuestions: string
+  isOpen: boolean
+  countOfPlayers: number
 }
 
 interface LobbyCreationAttributes
@@ -21,6 +23,8 @@ class Lobby
   public maxPlayers!: number
   public countOfRounds!: number
   public usedQuestions!: string
+  public isOpen!: boolean
+  public countOfPlayers!: number
 }
 
 Lobby.init(
@@ -45,6 +49,14 @@ Lobby.init(
     },
     usedQuestions: {
       type: DataTypes.STRING,
+      allowNull: false,
+    },
+    isOpen: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+    },
+    countOfPlayers: {
+      type: DataTypes.NUMBER,
       allowNull: false,
     },
   },

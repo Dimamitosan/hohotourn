@@ -33,12 +33,14 @@
   border-radius: 35px;
 }
 
-.setingTitle {
+.settingTitle {
   font-size: 18px;
   margin-left: 8vw;
-  width: 40%;
+  width: 40vw;
 }
-
+.checkbox {
+  transform: scale(1.8);
+}
 .settingChoice {
   font-size: 16px;
 }

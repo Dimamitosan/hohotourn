@@ -26,6 +26,13 @@ export const joinLobby = async (socket: any, code: string) => {
       )
     )
     try {
+      const countOfPlayers = await Lobby.findOne({
+        where: { lobbyCode: code },
+      }).then((lobby) => lobby!.countOfPlayers)
+      await Lobby.update(
+        { countOfPlayers: countOfPlayers + 1 },
+        { where: { lobbyCode: code } }
+      )
       const lobbyInfo = await Lobby?.findOne({ where: { lobbyCode: code } })
       const maxPlayers = lobbyInfo?.maxPlayers
 
@@ -45,15 +52,17 @@ export const checkLobbyIsFull = async (socket: any, code: string) => {
   console.log('checking')
   try {
     const lobby = await Lobby.findOne({ where: { lobbyCode: code } })
-    const playersInlobby = await User.findAll({ where: { lobbyCode: code } })
+    const playersInlobby = await Lobby.findOne({
+      where: { lobbyCode: code },
+    }).then((lobby) => lobby!.countOfPlayers)
     if (!lobby) {
       socket.emit('lobbyStatus', 'Мы не нашли такого лобби(', false)
     } else {
       if (lobby!.gameStarted === true) {
         socket.emit('lobbyStatus', 'Игра уже началась, зайти нельзя!', false)
-      } else if (lobby!.maxPlayers > playersInlobby.length) {
+      } else if (lobby!.maxPlayers > playersInlobby) {
         socket.emit('lobbyStatus', 'Мы тебя ждем, заходи скорее!', true)
-      } else if (lobby!.maxPlayers === playersInlobby.length) {
+      } else if (lobby!.maxPlayers === playersInlobby) {
         socket.emit('lobbyStatus', 'Это лобби уже заполнено!', false)
       }
     }

@@ -1,0 +1,72 @@
+.body {
+  display: grid;
+}
+
+.headder {
+  width: 80vw;
+  display: flex;
+  justify-content: space-between;
+}
+.roundButton {
+  margin: 8vw 0 0 0;
+  color: black;
+  cursor: pointer;
+  font-size: 18px;
+  background-color: rgb(253, 229, 170);
+  width: 15vw;
+  height: 15vw;
+  border: none;
+  border-radius: 36px;
+  text-align: center;
+}
+.listOfLobbies {
+  margin-top: 4vw;
+  /* border: solid 3px black; */
+  border-radius: 35px;
+  width: 85vw;
+  height: 75vh;
+  text-align: center;
+  list-style-type: none;
+}
+.listOfLobbies {
+  overflow-y: auto; /* Добавляет вертикальную прокрутку при переполнении */
+  /*border: 1px solid #ccc;  Добавьте границу для лучшего визуального отображения */
+  border-radius: 5px; /* Закругление уголков (по желанию) */
+  padding: 0 5vw; /* Отступы внутри списка */
+}
+
+.lobbyButton {
+  display: flex;
+  text-align: center;
+  color: black;
+  height: 13vw;
+  width: 75vw;
+  border-radius: 35px;
+  border: none;
+  font-size: 20px;
+  background-color: rgb(253, 229, 170);
+  margin: 3vw 0;
+}
+.row {
+  align-items: center;
+}
+.loadMore {
+  display: flex;
+  padding: 0;
+  justify-content: center;
+  text-align: center;
+  color: black;
+  height: 13vw;
+  width: 75vw;
+  border-radius: 35px;
+  border: none;
+  font-size: 20px;
+  background-color: rgb(253, 229, 170);
+  margin: 7vw 0 3vw 0;
+}
+.code {
+  width: 30vw;
+}
+.message {
+  margin-top: 4vw;
+}

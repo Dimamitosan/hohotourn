@@ -70,12 +70,12 @@ export const userEnter = async (socket: any, [telegramId, nick]: any) => {
 export const disconnect = async (socket: any) => {
   console.log('user disconnected', socket.id)
 
-  const disconectedUser = {
-    ...(await User.findOne({ where: { socket: socket.id } }))?.dataValues,
-  }
-
   try {
-    const disconectedLobbyCode = disconectedUser.lobbyCode
+    const disconectedLobbyCode = await User.findOne({
+      where: { socket: socket.id },
+    }).then((user) => user!.lobbyCode)
+
+    console.log('disconectedLobbyCode', disconectedLobbyCode)
 
     await User.update(
       {
@@ -91,22 +91,34 @@ export const disconnect = async (socket: any) => {
       },
       { where: { socket: socket.id } }
     )
-    const playersInLobby = await User.findAll({
-      where: { lobbyCode: disconectedLobbyCode },
-    })
 
-    const arrOfNicks = playersInLobby.map((user) => user.nick)
-
-    if (
-      (await User.findAll({
+    if (disconectedLobbyCode) {
+      const countOfPlayers = await Lobby.findOne({
         where: { lobbyCode: disconectedLobbyCode },
-      }).then((users) => users.length === 0)) &&
-      disconectedLobbyCode
-    ) {
-      await Lobby.destroy({ where: { lobbyCode: disconectedLobbyCode } })
-    } else {
-      if (disconectedLobbyCode) {
-        io.to(disconectedLobbyCode).emit('updatePlayers', arrOfNicks)
+      }).then((lobby) => lobby!.countOfPlayers)
+
+      await Lobby.update(
+        { countOfPlayers: countOfPlayers - 1 },
+        { where: { lobbyCode: disconectedLobbyCode } }
+      )
+
+      const playersInLobby = await User.findAll({
+        where: { lobbyCode: disconectedLobbyCode },
+      })
+
+      const arrOfNicks = playersInLobby.map((user) => user.nick)
+
+      if (
+        (await User.findAll({
+          where: { lobbyCode: disconectedLobbyCode },
+        }).then((users) => users.length === 0)) &&
+        disconectedLobbyCode
+      ) {
+        await Lobby.destroy({ where: { lobbyCode: disconectedLobbyCode } })
+      } else {
+        if (disconectedLobbyCode) {
+          io.to(disconectedLobbyCode).emit('updatePlayers', arrOfNicks)
+        }
       }
     }
   } catch (e) {}

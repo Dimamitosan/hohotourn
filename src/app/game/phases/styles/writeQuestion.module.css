@@ -25,3 +25,7 @@
   border-radius: 35px;
   margin-bottom: 3vh;
 }
+
+.disabled {
+  opacity: 0.5;
+}

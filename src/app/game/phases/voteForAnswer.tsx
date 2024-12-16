@@ -19,6 +19,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
   const [ownerOfQuestion, setOwnerOfQuestion] = useState<string>('')
   const [numberOfQuestion, setNumberOfQuestion] = useState<number>(1)
   const [arrOfPlayersVotes, setArrOfPlayersVotes] = useState<any[]>([])
+  const [numberOfVote, setNumberOfVote] = useState<number | null>(null)
 
   const socket = useSocket()
 
@@ -33,6 +34,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
 
   useEffect(() => {
     if (phase === 4 && seconds === 15 && canChangeAnswer) {
+      setNumberOfVote(null)
       socket.emit('getStragersQuestion', [code, numberOfQuestion])
       socket.on(
         'takeStragersQuestion',
@@ -52,7 +54,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
           setCanVote(canVote)
         }
       )
-      console.log(strangersAnswers, strangersQuestion, canVote)
+      // console.log(strangersAnswers, strangersQuestion, canVote)
       setCanChangeAnswer(false)
     }
     return () => {
@@ -77,6 +79,13 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
       socket.off('getArrOfVotes')
     }
   }, [arrOfPlayersVotes])
+
+  const handleClickVote = (voteNumber: number) => {
+    if (voteNumber != numberOfVote) {
+      setNumberOfVote(voteNumber)
+      socket.emit('voteForAnswer', voteNumber)
+    }
+  }
 
   return (
     <div className={style.content}>
@@ -105,10 +114,10 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
         <button
           className={`${style.answerButton} ${
             phase === 5 ? style.disabled : null
-          }`}
+          } ${numberOfVote === 1 ? style.active : null}`}
           disabled={phase === 4 ? !canVote : true}
           onClick={() => {
-            socket.emit('voteForAnswer', 1)
+            handleClickVote(1)
           }}
         >
           <p>{strangersAnswers[0]}</p>
@@ -135,10 +144,10 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
         <button
           className={`${style.answerButton} ${
             phase === 5 ? style.disabled : null
-          }`}
+          } ${numberOfVote === 2 ? style.active : null}`}
           disabled={phase === 4 ? !canVote : true}
           onClick={() => {
-            socket.emit('voteForAnswer', 2)
+            handleClickVote(2)
           }}
         >
           <p>{strangersAnswers[1]}</p>

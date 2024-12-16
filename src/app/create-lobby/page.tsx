@@ -7,15 +7,19 @@ const CreateLobby = () => {
   const [lobbyCode, setLobbyCode] = useState('')
   const [countOfPlayers, setCountOfPlayers] = useState(10)
   const [countOfRounds, setCountOfRounds] = useState(3)
+  const [isLobbyOpen, setIsLobbyOpen] = useState<Boolean>(false)
   const router = useRouter()
   const socket = useSocket()
 
   const createLobby = () => {
-    socket.emit('createLobby', [countOfPlayers, countOfRounds])
+    socket.emit('createLobby', [countOfPlayers, countOfRounds, isLobbyOpen])
     socket.on('lobbyCreated', (code: string) => {
       setLobbyCode(code) // Устанавливаете код лобби
       router.push(`/lobby/${code}`) // Перенаправляете на лобби
     })
+  }
+  const handleCheckboxChange = (checked: boolean) => {
+    setIsLobbyOpen(checked)
   }
 
   return (
@@ -27,7 +31,7 @@ const CreateLobby = () => {
 
       <div className={style.lobbySettings}>
         <div className={style.setting}>
-          <p className={style.setingTitle}>Игроки</p>
+          <p className={style.settingTitle}>Игроки</p>
           <div className={style.inputRow}>
             <button
               className={style.buttonInput}
@@ -55,7 +59,7 @@ const CreateLobby = () => {
         </div>
 
         <div className={style.setting}>
-          <p className={style.setingTitle}>Раунды</p>
+          <p className={style.settingTitle}>Раунды</p>
           <div className={style.inputRow}>
             <button
               className={style.buttonInput}
@@ -82,10 +86,17 @@ const CreateLobby = () => {
           </div>
         </div>
         <div className={style.setting}>
-          <p className={style.setingTitle}>Тип лобби</p>
+          <p className={style.settingTitle}>Открытое лобби</p>
+          <input
+            type="checkbox"
+            className={style.checkbox}
+            checked={Boolean(isLobbyOpen)}
+            onChange={(e) => handleCheckboxChange(e.target.checked)}
+          />
+          {/* <p className={style.setingTitle}>Тип лобби</p>
           <div className={style.inputRow}>
             <p className={style.settingChoise}>Закрытый</p>
-          </div>
+          </div> */}
         </div>
       </div>
 

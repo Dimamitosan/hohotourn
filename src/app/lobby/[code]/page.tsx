@@ -130,19 +130,8 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
       </div>
       <div className={style.buttons}>
         {lobbyLeader && !isGameStarted ? (
-          <button
-            className={style.button}
-            onClick={handleStartGame}
-            disabled={players.length < 3}
-          >
-            <p>
-              {' '}
-              {players.length < 3
-                ? `Для начала нужно еще ${3 - players.length} игрока`
-                : timerStarted
-                ? 'Отмена'
-                : 'Начать игру'}
-            </p>
+          <button className={style.button} onClick={handleStartGame}>
+            <p> {timerStarted ? 'Отмена' : 'Начать игру'}</p>
           </button>
         ) : null}
         <button className={style.button} onClick={quit}>

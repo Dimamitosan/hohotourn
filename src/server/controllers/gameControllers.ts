@@ -5,8 +5,6 @@ import { where } from 'sequelize'
 import Lobby from '@/models/Lobby'
 import arrOfQuestions from '../questions'
 
-const { Op } = require('sequelize')
-
 //
 export const findLobbyLeader = async (socket: any, code: string) => {
   const ll = await User.findOne({ where: { socket: socket.id } }).then(
@@ -63,7 +61,7 @@ const setNumbers = async (code: string) => {
       { where: { socket: randomSocket } }
     )
   })
-  console.log(usersSockets, shuffledSockets, 'aaaaaaaaaaaaaaaaaa')
+  // console.log(usersSockets, shuffledSockets, 'aaaaaaaaaaaaaaaaaa')
 }
 // function getRandomNumbers(n: number) {
 //   const numbers = Array.from({ length: n }, (_, i) => i + 1)

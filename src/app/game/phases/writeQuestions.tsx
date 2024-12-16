@@ -20,8 +20,10 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
     if (phase === 2 && seconds <= 2) {
       //ввод вопросов, в конце они отправляются и получаются чужие вопросы
 
-      setCanGetRandomQuestion(true)
       socket.emit('sendQuestion', question)
+    }
+    if (phase === 2 && seconds === 30) {
+      setCanGetRandomQuestion(true)
     }
 
     return () => {
@@ -33,7 +35,6 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   useEffect(() => {
     socket.on('getRandomQuestion', (randomQuestion: string) => {
       setQuestion(randomQuestion)
-      setCanGetRandomQuestion(false)
     })
     return () => {
       socket.off('getRandomQuestion')
@@ -41,6 +42,7 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [socket, question, canGetRandomQuestion])
 
   const getRandomQuestion = () => {
+    setCanGetRandomQuestion(false)
     socket.emit('requestRandomQuestion', code)
   }
 
@@ -49,7 +51,7 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
       <input
         className={style.inputQuestion}
         type="text"
-        maxLength={44}
+        maxLength={75}
         placeholder="Введите вопрос для других игроков"
         value={question}
         onChange={(e) => {
@@ -59,7 +61,9 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
 
       <button
         disabled={!canGetRandomQuestion}
-        className={style.randomQuestion}
+        className={`${style.randomQuestion} ${
+          canGetRandomQuestion ? null : style.disabled
+        }`}
         onClick={getRandomQuestion}
       >
         Случайный вопрос
