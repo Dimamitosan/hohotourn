@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useSocket } from '@/app/context/SocketContext'
 import { useRouter } from 'next/navigation'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+
 import style from './style.module.css'
 const CreateLobby = () => {
   const [lobbyCode, setLobbyCode] = useState('')
@@ -25,7 +28,7 @@ const CreateLobby = () => {
   return (
     <div className={style.body}>
       <button className={style.back} onClick={() => router.push(`/`)}>
-        {'<'}
+        <FontAwesomeIcon icon={faArrowLeft} />
       </button>
       <p className={style.title}>Создание лобби</p>
 
@@ -93,10 +96,6 @@ const CreateLobby = () => {
             checked={Boolean(isLobbyOpen)}
             onChange={(e) => handleCheckboxChange(e.target.checked)}
           />
-          {/* <p className={style.setingTitle}>Тип лобби</p>
-          <div className={style.inputRow}>
-            <p className={style.settingChoise}>Закрытый</p>
-          </div> */}
         </div>
       </div>
 

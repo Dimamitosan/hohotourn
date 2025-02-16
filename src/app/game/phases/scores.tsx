@@ -18,6 +18,7 @@ const Scores: React.FC<Props> = ({ code, seconds, phase }) => {
       socket.emit('getScores', code) // Запрос на получение данных
 
       socket.on('scoresData', (data: []) => {
+        data.sort((a, b) => b[1] - a[1])
         setScores(data) // Обновление состояния с полученными данными
       })
     }

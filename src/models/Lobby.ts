@@ -9,6 +9,7 @@ interface LobbyAttributes {
   usedQuestions: string
   isOpen: boolean
   countOfPlayers: number
+  isPaused: boolean
 }
 
 interface LobbyCreationAttributes
@@ -25,6 +26,7 @@ class Lobby
   public usedQuestions!: string
   public isOpen!: boolean
   public countOfPlayers!: number
+  public isPaused!: boolean
 }
 
 Lobby.init(
@@ -57,6 +59,10 @@ Lobby.init(
     },
     countOfPlayers: {
       type: DataTypes.NUMBER,
+      allowNull: false,
+    },
+    isPaused: {
+      type: DataTypes.BOOLEAN,
       allowNull: false,
     },
   },

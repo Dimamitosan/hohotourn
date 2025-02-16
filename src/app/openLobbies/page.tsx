@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { useSocket } from '@/app/context/SocketContext'
 import { useRouter } from 'next/navigation'
 import style from './openLobbies.module.css'
-import test from 'node:test'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faRotateRight, faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 
 const OpenLobbies = () => {
   const [lobbies, setLobbies] = useState<any[]>([])
@@ -66,10 +67,10 @@ const OpenLobbies = () => {
     <div className={style.content}>
       <div className={style.headder}>
         <button className={style.roundButton} onClick={() => router.push(`/`)}>
-          {'<'}
+          <FontAwesomeIcon icon={faArrowLeft} />
         </button>
         <button className={style.roundButton} onClick={reload}>
-          {'reload'}
+          <FontAwesomeIcon icon={faRotateRight} />
         </button>
       </div>
       <div className={style.body}>

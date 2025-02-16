@@ -42,6 +42,11 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   useEffect(() => {
     if (code) {
       socket.emit('joinLobby', code)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (code) {
       try {
         socket.on('updateLobbyInfo', (max: number) => {
           setMaxPlayers(max)

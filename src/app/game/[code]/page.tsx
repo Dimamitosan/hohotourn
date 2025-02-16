@@ -12,26 +12,75 @@ import style from '../styles/page.module.css'
 interface LobbyProps {
   params: any
 }
+
+interface Popup {
+  id: number
+  message: string
+}
+
+interface PopupProps {
+  message: string
+  onRemove: () => void
+}
+
+const Popup: React.FC<PopupProps> = ({ message, onRemove }) => {
+  return (
+    <div className={style.popup} onAnimationEnd={onRemove}>
+      {message} - покинул игру
+    </div>
+  )
+}
+
 const Game: React.FC<LobbyProps> = ({ params }) => {
-  const [lobbyLeader, setLobbyLeader] = useState<boolean | null>(null)
+  const [lobbyLeader, setLobbyLeader] = useState<boolean>(false)
+  const [isLeaderSet, setIsLeaderSet] = useState<boolean>(false)
   const [seconds, setSeconds] = useState(5)
   const [isPaused, setIsPaused] = useState(false)
   const [phase, setPhase] = useState<number>(1)
+  const [isGameEnded, setIsGameEnded] = useState<boolean>(false)
+  const [prevPhase, setPrevPhase] = useState<number>(0)
+  const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
+  const [popups, setPopups] = useState<Popup[]>([])
 
   const socket = useSocket()
+  const router = useRouter()
   const code = params.code
+
+  const createPopup = (nick: string) => {
+    const newPopup = { id: Date.now(), message: nick }
+    setPopups([...popups, newPopup])
+  }
+
+  const removePopup = (id: number) => {
+    setPopups(popups.filter((popup) => popup.id !== id))
+  }
 
   useEffect(() => {
     socket.emit('findLobbyLeader', code)
-    socket.on('getLeader', (isLeader: boolean) => {
+    socket.on('setLeader', (isLeader: boolean) => {
       setLobbyLeader(isLeader)
+      setIsLeaderSet(true)
     })
-  }, [socket, lobbyLeader])
+  }, [socket])
 
   useEffect(() => {
-    if (lobbyLeader) {
-      socket.emit('startGameTimer', code)
+    socket.on('playerLeave', (userName: string) => {
+      createPopup(userName)
+    })
+  }, [socket])
+
+  useEffect(() => {
+    if (isLeaderSet) {
+      console.log(lobbyLeader, isGameStarted)
+      if (lobbyLeader && !isGameStarted) {
+        socket.emit('startGameTimer', code)
+        setIsGameStarted(true)
+      }
+      if (!lobbyLeader && !isGameStarted) {
+        setIsGameStarted(true)
+      }
     }
+
     socket.on(
       'gameTimerUpdate',
       ({
@@ -43,12 +92,12 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       }) => {
         setSeconds(gameTimerValue)
         setPhase(gamePhase)
+        if (gamePhase !== 0) {
+          setPrevPhase(gamePhase)
+        }
       }
     )
-    return () => {
-      socket.off('getLeader')
-    }
-  }, [socket, lobbyLeader])
+  }, [socket, isLeaderSet]) //lobbyLeader
 
   useEffect(() => {
     socket.on('changePause', (pause: boolean) => {
@@ -57,28 +106,82 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     })
   }, [socket, isPaused]) //isPaused
 
+  useEffect(() => {
+    socket.on('gameEnded', () => {
+      setIsGameEnded(true)
+    })
+  }, [socket, isGameEnded])
+
   const handleTogglePause = () => {
     console.log(isPaused)
-    console.log('button presed')
+    console.log('button presed', code)
     socket.emit('togglePause', code)
   }
 
   return (
     <div className={style.content}>
+      <div>
+        {popups.map((popup) => (
+          <Popup
+            key={popup.id}
+            message={popup.message}
+            onRemove={() => removePopup(popup.id)}
+          />
+        ))}
+      </div>
       <div className={style.header}>
-        {/* <p className={style.lobby}>Код лобби: {code}</p> */}
+        <p className={style.lobby}>Код лобби: {code}</p>
+
         <div className={style.timeAndPause}>
-          <p className={style.timer}>{seconds}</p>
-          {lobbyLeader ? (
-            <button className={style.pauseButton} onClick={handleTogglePause}>
-              {isPaused ? 'Продолжить' : 'Пауза'}
-            </button>
-          ) : (
-            <p></p>
+          {isGameEnded ? null : (
+            <>
+              <p className={style.timer}>{seconds}</p>
+
+              {lobbyLeader ? (
+                <button
+                  className={style.pauseButton}
+                  onClick={handleTogglePause}
+                >
+                  {isPaused ? 'Продолжить' : 'Пауза'}
+                </button>
+              ) : (
+                <p></p>
+              )}
+            </>
           )}
         </div>
       </div>
       <div className={style.body}>
+        {phase === 0 ? (
+          <div className={style.waiting}>
+            {prevPhase === 1 ? (
+              <>
+                <p>
+                  Придумайте шуточный вопрос, он достанется двум другим
+                  случайным игрокам.
+                </p>
+                <br />
+                <br />
+                <p>Вопрос и ответы отправляются сами, по истечению времени!</p>
+              </>
+            ) : prevPhase === 2 ? (
+              <>
+                <p>Напишите два ответа на чужие вопросы.</p>
+                <br />
+                <p>Вопрос и ответы отправляются сами, по истечению времени!</p>
+              </>
+            ) : prevPhase === 3 ? (
+              <>
+                <p>Голосуйте за самый смешной ответ!</p>
+                <br />
+                <p>Если вы передумали - вы можете изменить свой выбор.</p>
+              </>
+            ) : prevPhase === 5 ? (
+              <p>Давайте посмотрим на результаты!</p>
+            ) : null}
+          </div>
+        ) : null}
+
         {phase === 1 ? (
           <Scores code={code} seconds={seconds} phase={phase}></Scores>
         ) : null}
@@ -103,18 +206,14 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
             phase={phase}
           ></VoteForAnswer>
         ) : null}
-
-        {/* <p className={style.phase}> фаза - {phase}</p> */}
       </div>
-      {/* <div className={style.footer}>
-        {lobbyLeader ? (
-          <>
-            <button className={style.pauseButton} onClick={handleTogglePause}>
-              {isPaused ? '>' : '||'}
-            </button>{' '}
-          </>
-        ) : null}
-      </div> */}
+      {isGameEnded ? (
+        <div className={style.footer}>
+          <button onClick={() => router.push(`/`)} className={style.backToMenu}>
+            Выйти в главное меню
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }

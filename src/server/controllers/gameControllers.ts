@@ -1,21 +1,25 @@
 import { Socket } from 'socket.io-client'
 import User from '../../models/User'
+import Sessions from '@/models/Sessions'
+
 import { io } from '../index'
 import { where } from 'sequelize'
 import Lobby from '@/models/Lobby'
+
 import arrOfQuestions from '../questions'
 
 //
 export const findLobbyLeader = async (socket: any, code: string) => {
-  const ll = await User.findOne({ where: { socket: socket.id } }).then(
-    (user) => user?.lobbyLeader
-  )
+  // const ll = await User.findOne({ where: { socket: socket.id } }).then(
+  //   (user) => user?.lobbyLeader
+  // )
 
+  // было getLeader, и в game page было get
   socket.emit(
-    'getLeader',
-    await User.findOne({ where: { socket: socket.id } }).then(
-      (user) => user?.lobbyLeader
-    )
+    'setLeader',
+    await Sessions.findOne({
+      include: { model: User, as: 'User', where: { socket: socket.id } },
+    }).then((user) => user?.lobbyLeader)
   )
 }
 //
@@ -23,16 +27,24 @@ export const findLobbyLeader = async (socket: any, code: string) => {
 async function getArrOfVotes(code: any) {
   const arr: string[][] = [[], []]
 
-  await User.findAll({ where: { lobbyCode: code, voteNumber: 1 } }).then(
-    (users) => {
-      users.map((user) => arr[0].push(user.nick))
-    }
-  )
-  await User.findAll({ where: { lobbyCode: code, voteNumber: 2 } }).then(
-    (users) => {
-      users.map((user) => arr[1].push(user.nick))
-    }
-  )
+  await User.findAll({
+    include: {
+      model: Sessions,
+      as: 'Sessions',
+      where: { lobbyCode: code, voteNumber: 1 },
+    },
+  }).then((users) => {
+    users.map((user) => arr[0].push(user.nick))
+  })
+  await User.findAll({
+    include: {
+      model: Sessions,
+      as: 'Sessions',
+      where: { lobbyCode: code, voteNumber: 2 },
+    },
+  }).then((users) => {
+    users.map((user) => arr[1].push(user.nick))
+  })
   return arr
 }
 
@@ -45,41 +57,39 @@ function shuffleArray(array: any[]): string[] {
 }
 
 const setNumbers = async (code: string) => {
-  const players = await User.findAll({
+  const players = await Sessions.findAll({
     where: {
       lobbyCode: code,
+      inRound: true,
     },
   })
 
-  const usersSockets = players.map((user) => user.socket)
+  const playersUserId = players.map((player) => player!.userId)
 
-  const shuffledSockets = shuffleArray(usersSockets)
+  const shuffledSockets = shuffleArray(playersUserId)
 
-  shuffledSockets.map(async (randomSocket) => {
-    await User.update(
-      { number: shuffledSockets.indexOf(randomSocket) + 1 },
-      { where: { socket: randomSocket } }
+  shuffledSockets.map(async (randomId) => {
+    await Sessions.update(
+      { number: shuffledSockets.indexOf(randomId) + 1 },
+      { where: { userId: randomId } }
     )
   })
-  // console.log(usersSockets, shuffledSockets, 'aaaaaaaaaaaaaaaaaa')
 }
-// function getRandomNumbers(n: number) {
-//   const numbers = Array.from({ length: n }, (_, i) => i + 1)
-//   for (let i = numbers.length - 1; i > 0; i--) {
-//     const j = Math.floor(Math.random() * (i + 1))
-//     ;[numbers[i], numbers[j]] = [numbers[j], numbers[i]]
-//   }
-//   return numbers
-// }
 
-// export const setNumbers = async (socket: any, code: string) => {
-//   const countOfUsers = User.findAll({ where: { lobbyCode: code } })
-//   const rundomArr = getRandomNumbers((await countOfUsers).length)
-//   countOfUsers.then((arr) => {
-//     arr.map(async (user) => {
-//       await User.update({ number: rundomArr.pop() }, { where: { id: user.id } })
-//     })
-//   })
+// export const togglePause = async (code: string) => {
+//   const currentPauseState = gameStates[code].isPaused
+
+//   const newPauseState = !currentPauseState
+
+//   if (currentPauseState !== newPauseState) {
+//     await Lobby.update(
+//       { isPaused: newPauseState },
+//       { where: { lobbyCode: code } }
+//     )
+//     gameStates[code].isPaused = newPauseState
+
+//     io.to(code).emit('changePause', newPauseState)
+//   }
 // }
 
 export const startGameTimer = async (socket: any, code: string) => {
@@ -97,57 +107,92 @@ export const startGameTimer = async (socket: any, code: string) => {
   let gameTimerValue = 5
   let gamePhase = 1
   let paused = false
-  const countOfQuestions = await User.count({ where: { lobbyCode: code } })
+  let waiting = false
+  let nextGamsePhase = 0
+  let nextGameTimerValue = 0
+  const timeForFirstPhase = 5
+  const timeForSecondPhase = 10 //60
+  const timeForThirdPhase = 10 //90
+  const timeForFourthPhase = 15
+  const timeForFifthPhase = 10
+
+  let countOfQuestions = 0
   let newNumberOfQuestion = 0
+
   socket.on('togglePause', (code: string) => {
     console.log('emit changePause')
     paused = !paused
     console.log(paused)
     io.to(code).emit('changePause', paused)
   })
+
   if (gameTimerValue === 5) {
     const intervalId = setInterval(async () => {
+      // if (gameStates[code] !== undefined) {
+      //   paused = gameStates[code].isPaused
+      // } else {
+      //   clearInterval(intervalId)
+      // }
+
+      // console.log(gameStates)
       if (!paused) {
+        // console.log(io.sockets.adapter.rooms.get(code))
         gameTimerValue -= 1
         const lobbyCountOfPlayers = (
-          await User.findAll({ where: { lobbyCode: code } })
+          await Sessions.findAll({ where: { lobbyCode: code } })
         ).length
         if (lobbyCountOfPlayers === 0) {
           await Lobby.destroy({ where: { lobbyCode: code } })
           console.log('timer cleared')
           clearInterval(intervalId)
         }
+
         if (gameTimerValue < 0 && gamePhase === 1) {
-          await User.update(
+          await Sessions.update(
+            { inRound: false },
+            { where: { inGame: false } }
+          )
+          countOfQuestions = await Sessions.count({
+            where: { lobbyCode: code, inRound: true },
+          })
+
+          await Sessions.update(
             {
+              number: null,
+              question: null,
               firstAnswer: null,
               secondAnswer: null,
             },
-            { where: { socket: socket.id } }
+            { where: { lobbyCode: code } }
           )
 
-          gameTimerValue = 30
+          gameTimerValue = timeForSecondPhase
           gamePhase = 2
+          waiting = true ///////
         }
         if (gameTimerValue < 0 && gamePhase === 2) {
           setNumbers(code)
-          gameTimerValue = 60
+          gameTimerValue = timeForThirdPhase
           gamePhase = 3
+          waiting = true ///////
         }
 
         if (gameTimerValue < 0 && gamePhase === 3) {
-          gameTimerValue = 15
+          gameTimerValue = timeForFourthPhase
           gamePhase = 4
+          waiting = true ///////
         }
         if (gameTimerValue < 0 && gamePhase === 4) {
-          gameTimerValue = 10
+          gameTimerValue = timeForFifthPhase
           gamePhase = 5
         }
-        if (gameTimerValue === 10 && gamePhase === 5) {
+        if (gameTimerValue === timeForFifthPhase && gamePhase === 5) {
           const arrOfVotes = await getArrOfVotes(code)
 
           const usersInLobby = (
-            await User.findAll({ where: { lobbyCode: code } })
+            await Sessions.findAll({
+              where: { lobbyCode: code, inRound: true },
+            })
           ).length
 
           const firstAnswerNumber =
@@ -161,93 +206,79 @@ export const startGameTimer = async (socket: any, code: string) => {
               : newNumberOfQuestion - 1
 
           const firstUserScore =
-            (await User.findOne({
+            (await Sessions.findOne({
               where: { lobbyCode: code, number: firstAnswerNumber },
             }).then((user) => user?.score)) || 0
           const secondUserScore =
-            (await User.findOne({
+            (await Sessions.findOne({
               where: { lobbyCode: code, number: secondAnswerNumber },
             }).then((user) => user?.score)) || 0
 
           const scoresForFirstPlayer =
             firstUserScore + arrOfVotes[0].length * 100 * roundNumber
-          // (roundNumber > 1 ? roundNumber * 0.5 : roundNumber)
 
           const scoresForSecondPlayer =
             secondUserScore + arrOfVotes[1].length * 100 * roundNumber
-          // (roundNumber > 1 ? roundNumber * 0.5 : roundNumber)
 
-          await User.update(
+          await Sessions.update(
             { score: scoresForFirstPlayer },
             { where: { lobbyCode: code, number: firstAnswerNumber } }
           )
-          await User.update(
+          await Sessions.update(
             { score: scoresForSecondPlayer },
             { where: { lobbyCode: code, number: secondAnswerNumber } }
-          )
-          console.log('arr of votes:', arrOfVotes, arrOfVotes[0], arrOfVotes[1])
-          console.log(
-            'first user score old:',
-            firstUserScore,
-            'new:',
-            scoresForFirstPlayer
-          )
-          console.log(
-            'second user score old:',
-            secondUserScore,
-            'new:',
-            scoresForSecondPlayer
           )
           io.to(code).emit('getArrOfVotes', arrOfVotes)
         }
 
         if (gameTimerValue < 0 && gamePhase === 5) {
-          console.log(
-            'вопрос номер:',
-            newNumberOfQuestion,
-            'всего вопросов',
-            countOfQuestions,
-            'номер раунда',
-            roundNumber,
-            'всего раундов',
-            countOfRounds
-          )
-          console.log(
-            newNumberOfQuestion === countOfQuestions &&
-              roundNumber === countOfRounds,
-            newNumberOfQuestion === countOfQuestions,
-            roundNumber === countOfRounds
-          )
           if (
             newNumberOfQuestion === countOfQuestions &&
             roundNumber === countOfRounds
           ) {
-            gameTimerValue = 5
+            gameTimerValue = timeForFirstPhase
             gamePhase = 1
             console.log('timer cleared')
+            io.to(code).emit('gameEnded')
             clearInterval(intervalId)
-            //gameTimerValue = 0 // Сбрасываем таймер
           } else if (
             newNumberOfQuestion < countOfQuestions &&
             roundNumber <= countOfRounds
           ) {
-            gameTimerValue = 15
+            gameTimerValue = timeForFourthPhase
             gamePhase = 4
           } else if (
             newNumberOfQuestion === countOfQuestions &&
             roundNumber <= countOfRounds
           ) {
             roundNumber++
-            gameTimerValue = 5
+            gameTimerValue = timeForFirstPhase
             gamePhase = 1
             newNumberOfQuestion = 0
+            waiting = true ///////
           }
         }
-        if (gameTimerValue === 15 && gamePhase === 4) {
+        if (gameTimerValue === timeForFourthPhase && gamePhase === 4) {
           newNumberOfQuestion++
           console.log('numberOfQuestion changed!')
           setTimeout(() => {}, 1000)
           io.to(code).emit('getNewNumberOfquestion', newNumberOfQuestion)
+        }
+        if (waiting === true) {
+          if (nextGamsePhase === 0 && nextGameTimerValue === 0) {
+            nextGamsePhase = gamePhase
+            nextGameTimerValue = gameTimerValue
+            gamePhase = 0
+            gameTimerValue = 5
+          }
+
+          if (gameTimerValue === 0) {
+            waiting = false
+            gamePhase = nextGamsePhase
+            gameTimerValue = nextGameTimerValue
+            nextGamsePhase = 0
+            nextGameTimerValue = 0
+          }
         }
 
         console.log(
@@ -272,7 +303,7 @@ export const startGameTimer = async (socket: any, code: string) => {
         io.to(code).emit('gameTimerUpdate', {
           gameTimerValue,
           gamePhase,
-          // paused,
+
           newNumberOfQuestion,
         })
       }
@@ -284,47 +315,86 @@ export const sendAnswers = async (
   socket: any,
   [firstAnswerr, secondAnswerr]: string[]
 ) => {
-  User.update(
-    { firstAnswer: firstAnswerr, secondAnswer: secondAnswerr },
-    { where: { socket: socket.id } }
+  User.findOne({ where: { socket: socket.id } }).then(
+    async (user) =>
+      await Sessions.update(
+        { firstAnswer: firstAnswerr, secondAnswer: secondAnswerr },
+        { where: { userId: user!.id } }
+      )
   )
 }
 
 export const getStragersQuestion = async (socket: any, [code, number]: any) => {
-  await User.update({ voteNumber: null }, { where: { lobbyCode: code } })
+  await Sessions.update({ voteNumber: null }, { where: { lobbyCode: code } })
   console.log('getStarngersQuestions')
   setTimeout(async () => {
-    const countOfUsers = await User.count({ where: { lobbyCode: code } })
+    const countOfUsers = await Sessions.count({
+      where: { inRound: true, lobbyCode: code },
+    })
     const firstUserNumber =
       number - 2 <= 0 ? countOfUsers - Math.abs(number - 2) : number - 2
     const secondUserNumber =
       number - 1 <= 0 ? countOfUsers - Math.abs(number - 1) : number - 1
 
-    const user = await User.findOne({ where: { socket: socket.id } })
+    const user = await Sessions.findOne({
+      include: { model: User, as: 'User', where: { socket: socket.id } },
+    })
 
     const canVote =
       user?.number !== firstUserNumber && user?.number !== secondUserNumber
 
-    const userForQuestion = await User.findOne({
+    const ownerOfQuestion = await User.findOne({
+      include: {
+        model: Sessions,
+        as: 'Sessions',
+        where: { lobbyCode: code, number },
+      },
+    }).then((user) => user!.nick)
+
+    const question = await Sessions.findOne({
       where: { lobbyCode: code, number },
-    })
+    }).then((session) => session!.question)
 
-    const question = userForQuestion?.question
-    const ownerOfQuestion = userForQuestion?.nick
+    // const question = userForQuestion.question
+    // const ownerOfQuestion = userForNick?.nick
 
-    const userForFirstStrangerAnswer = await User.findOne({
+    const firstStrangersNick = await User.findOne({
+      include: {
+        model: Sessions,
+        as: 'Sessions',
+        where: { lobbyCode: code, number: firstUserNumber },
+      },
+    }).then((user) => user!.nick)
+
+    const firstStrangerAnswer = await Sessions.findOne({
       where: { lobbyCode: code, number: firstUserNumber },
-    })
+    }).then((session) => session!.secondAnswer)
 
-    const firstStrangerAnswer = userForFirstStrangerAnswer?.secondAnswer
-    const firstStrangersNick = userForFirstStrangerAnswer?.nick
+    // const userForFirstStrangerAnswer = await User.findOne({
+    //   where: { lobbyCode: code, number: firstUserNumber },
+    // })
 
-    const userForSecondStrangerAnswer = await User.findOne({
+    // const firstStrangerAnswer = userForFirstStrangerAnswer?.secondAnswer
+    // const firstStrangersNick = userForFirstStrangerAnswer?.nick
+
+    const secondStrangerNick = await User.findOne({
+      include: {
+        model: Sessions,
+        as: 'Sessions',
+        where: { lobbyCode: code, number: secondUserNumber },
+      },
+    }).then((user) => user!.nick)
+
+    const secondStrangerAnswer = await Sessions.findOne({
       where: { lobbyCode: code, number: secondUserNumber },
-    })
+    }).then((session) => session!.firstAnswer)
 
-    const secondStrangerAnswer = userForSecondStrangerAnswer?.firstAnswer
-    const secondStrangerNick = userForSecondStrangerAnswer?.nick
+    // const userForSecondStrangerAnswer = await User.findOne({
+    //   where: { lobbyCode: code, number: secondUserNumber },
+    // })
+
+    // const secondStrangerAnswer = userForSecondStrangerAnswer?.firstAnswer
+    // const secondStrangerNick = userForSecondStrangerAnswer?.nick
 
     const strangersAnswers = [
       [firstStrangerAnswer, firstStrangersNick],
@@ -347,38 +417,33 @@ export const getStragersQuestion = async (socket: any, [code, number]: any) => {
 }
 
 export const sendQuestion = async (socket: any, question: string) => {
-  await User.update({ question: question }, { where: { socket: socket.id } })
+  const userId = await User.findOne({ where: { socket: socket.id } }).then(
+    (user) => user!.id
+  )
+  await Sessions.update({ question: question }, { where: { userId } })
 }
-export const requestQuestions = async (socket: any, code: string) => {
-  const countOfPlayers = await User.count({ where: { lobbyCode: code } })
 
-  const userNumber = await User.findOne({
-    where: { socket: socket.id },
+export const requestQuestions = async (socket: any, code: string) => {
+  const countOfPlayers = await Sessions.count({
+    where: { inRound: true, lobbyCode: code },
+  })
+
+  const userNumber = await Sessions.findOne({
+    include: { model: User, as: 'User', where: { socket: socket.id } },
   })
   if (userNumber && userNumber.number) {
-    const firstUserForQuestion = await User.findOne({
+    const firstUserForQuestion = await Sessions.findOne({
       where: {
         lobbyCode: code,
         number: (userNumber?.number % countOfPlayers) + 1,
       },
     })
-    const secondUserForQuestion = await User.findOne({
+    const secondUserForQuestion = await Sessions.findOne({
       where: {
         lobbyCode: code,
         number: ((userNumber?.number + 1) % countOfPlayers) + 1,
       },
     })
-
-    // console.log(
-    //   firstUserForQuestion?.question,
-    //   firstUserForQuestion?.number,
-    //   secondUserForQuestion?.question,
-    //   secondUserForQuestion?.number,
-
-    //   userNumber.number,
-    //   socket.id,
-    //   '------------вопросы'
-    // )
     socket.emit('getQuestions', [
       firstUserForQuestion?.question,
       secondUserForQuestion?.question,
@@ -388,16 +453,67 @@ export const requestQuestions = async (socket: any, code: string) => {
 
 export const voteForAnswer = async (socket: any, answerNumber: number) => {
   console.log(socket.id, answerNumber)
-  await User.update(
+
+  const userId = await User.findOne({ where: { socket: socket.id } }).then(
+    (user) => user!.id
+  )
+
+  await Sessions.update(
     { voteNumber: answerNumber },
-    { where: { socket: socket.id } }
+    { where: { userId: userId } }
   )
 }
 
 export const getScores = async (socket: any, code: string) => {
   try {
-    const users = await User.findAll({ where: { lobbyCode: code } })
-    const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
+    //   const session = await Sessions.findAll({
+    //     where: { lobbyCode: code },
+    //     include: [
+    //         {
+    //             model: User,
+    //             attributes: ['nick'], // Получаем только поле nick
+    //         }
+    //     ]
+    // });
+
+    // const players = await Sessions.findAll({
+    //   where: { lobbyCode: code },
+    //   include: {
+    //     model: User,
+    //     as: 'User',
+    //     attributes: ['nick'], // Берём только ник
+    //   },
+    //   attributes: ['score'], // Берём только счёт
+    // }).then((user) => user.map((userr) => [userr.score, userr.User.nick]))
+
+    // // Формируем массив [nick, score]
+    // const result = players.map((player) => [player.User.nick, player.score])
+
+    const players = (await Sessions.findAll({
+      where: { lobbyCode: code, inGame: true },
+      include: [
+        {
+          model: User,
+          as: 'User',
+          attributes: ['nick'],
+        },
+      ],
+      attributes: ['score'],
+    })) as any //as Array<SessionWithUser> // Явное приведение типа
+
+    const scoresArray = players.map((player: any) => [
+      player.User.nick,
+      player.score,
+    ])
+
+    console.log(scoresArray, 'scores array')
+    // // Формируем массив [nick, score]
+    // const scoresArray = session.map(session => {
+    //     return [session.User.nick, session.score]; // Здесь session.User - это объект, представляющий пользователя
+    // });
+
+    // const users = await Sessions.findAll({ where: { lobbyCode: code } })
+    // const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
 
     socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
   } catch (e) {

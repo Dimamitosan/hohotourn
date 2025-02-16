@@ -18,11 +18,10 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
 
   useEffect(() => {
     if (phase === 2 && seconds <= 2) {
-      //ввод вопросов, в конце они отправляются и получаются чужие вопросы
-
       socket.emit('sendQuestion', question)
     }
-    if (phase === 2 && seconds === 30) {
+    if (phase === 2 && seconds === 10) {
+      //60
       setCanGetRandomQuestion(true)
     }
 

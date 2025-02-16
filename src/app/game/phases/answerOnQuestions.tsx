@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useSocket } from '../../context/SocketContext'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowRight, faCheck } from '@fortawesome/free-solid-svg-icons'
 
 import style from './styles/answerOnQuestion.module.css'
 
@@ -19,7 +21,8 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   const socket = useSocket()
 
   useEffect(() => {
-    if (phase === 3 && seconds === 60) {
+    if (phase === 3 && seconds === 10) {
+      //90
       socket.emit('requestQuestions', code)
     }
     return () => {
@@ -38,10 +41,10 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
     if (phase === 3 && seconds === 0) {
       socket.emit('sendAnswers', [firstAnswer, secondAnswer])
 
-      setFirstAnswer('')
-      setSecondAnswer('')
-      setFirstAnswerIsReady(false)
-      setSecondAnswerIsReady(false)
+      // setFirstAnswer('')
+      // setSecondAnswer('')
+      // setFirstAnswerIsReady(false)
+      // setSecondAnswerIsReady(false)
     }
     return () => {
       socket.off('getStragersQuestion')
@@ -76,7 +79,7 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
                 setFirstAnswerIsReady(true)
               }}
             >
-              {'>'}
+              <FontAwesomeIcon icon={faArrowRight} />
             </button>
           </div>
         </>
@@ -89,7 +92,9 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
           </div>
           <div className={style.answerArea}>
             <input
-              className={style.inputAnswer}
+              className={`${style.inputAnswer} ${
+                secondAnswerIsReady ? style.disabled : null
+              }`}
               disabled={secondAnswerIsReady}
               type="text"
               maxLength={44}
@@ -101,13 +106,15 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
             />
 
             <button
-              className={style.sendButton}
+              className={`${style.sendButton} ${
+                secondAnswerIsReady ? style.disabled : null
+              }`}
               disabled={secondAnswerIsReady}
               onClick={() => {
                 setSecondAnswerIsReady(true)
               }}
             >
-              {'>'}
+              <FontAwesomeIcon icon={faCheck} />
             </button>
           </div>
         </>

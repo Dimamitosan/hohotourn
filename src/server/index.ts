@@ -1,7 +1,10 @@
 import { Server } from 'socket.io'
 import { createServer } from 'http'
-import User from '@/models/User'
+import Lobby from '../models/Lobby'
+import User from '../models/User'
+import Sessions from '@/models/Sessions'
 import sequelize from '../config/db'
+require('../models/index')
 import {
   createLobby,
   startTimer,
@@ -19,6 +22,7 @@ import {
   voteForAnswer,
   requestRandomQuestion,
   requestQuestions,
+  // togglePause,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter, disconnect } from './controllers/settingsControllers'
@@ -38,8 +42,8 @@ sequelize.sync({}).then(() => {
 
 const httpServer = createServer()
 export const io = new Server(httpServer, {
-  pingTimeout: 80000, // максимальное время ожидания пинга в миллисекундах (по умолчанию 20000)
-  pingInterval: 25000, // интервал пинга в миллисекундах (по умолчанию 25000)
+  pingTimeout: 10000, // максимальное время ожидания пинга в миллисекундах (по умолчанию 20000)
+  pingInterval: 5000, // интервал пинга в миллисекундах (по умолчанию 25000)
   cors: {
     origin: '*',
   },
@@ -116,8 +120,12 @@ io.on('connection', (socket) => {
   )
 
   socket.on('startGameTimer', (code: string) => {
-    startGameTimer(socket, code)
+    startGameTimer(socket, code) //
   })
+
+  // socket.on('togglePause', (code: string) => {
+  //   togglePause(code)
+  // })
 
   socket.on('sendQuestion', (question: string) =>
     sendQuestion(socket, question)
@@ -154,12 +162,16 @@ const cleanup = async () => {
   try {
     await sequelize.authenticate() // Проверяем соединение
     console.log('Соединение с базой данных установлено успешно.')
-    const [numberOfAffectedRows, affectedRows] = await User.update(
+    const [numberOfAffectedRowsUser, affectedRowsUser] = await User.update(
       { socket: null }, // Устанавливаем новое значение
       { where: {}, returning: true } // Параметр where пуст, поэтому будут обновлены все записи
     )
-    console.log(`${numberOfAffectedRows} пользователей обновлено.`)
-    console.log('Обновлённые записи:', affectedRows)
+    await Sessions.truncate()
+    await Lobby.truncate()
+
+    console.log('Табицы Lobby и Sessions очищены')
+    console.log(`${numberOfAffectedRowsUser} пользователей обновлено.`)
+    console.log('Обновлённые записи:', affectedRowsUser)
   } catch (e) {
     console.log(e)
   } finally {

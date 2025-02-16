@@ -1,30 +1,48 @@
 import { Server } from 'socket.io'
 import Lobby from '../../models/Lobby'
 import User from '../../models/User'
+import Sessions from '@/models/Sessions'
 import { Socket } from 'socket.io-client'
 import { io } from '../index'
 
 export const joinLobby = async (socket: any, code: string) => {
   socket.join(code)
   if (await Lobby.findOne({ where: { lobbyCode: code } })) {
-    if (
-      await User.findOne({
-        where: { socket: socket.id, lobbyCode: null }, //, lobbyCode: null
+    console.log(socket.id, '- id of connecting user')
+    const userId = await User.findOne({ where: { socket: socket.id } }).then(
+      (user) => user!.id
+    )
+
+    if (!(await Sessions.findOne({ where: { userId, lobbyCode: code } }))) {
+      try {
+        await Sessions.create({
+          userId,
+          lobbyCode: code,
+          lobbyLeader: false,
+          score: 0,
+          inGame: true,
+          inRound: true,
+        })
+      } catch (e) {
+        console.log('join control err')
+      }
+    } else if (
+      await Sessions.findOne({
+        where: { userId, lobbyCode: code, inGame: false },
       })
     ) {
-      console.log('user finded!')
-      await User.update(
-        { lobbyCode: code, lobbyLeader: false },
-        { where: { socket: socket.id } }
+      await Sessions.update(
+        { inGame: true },
+        { where: { userId, lobbyCode: code, inGame: false } }
       )
     }
+
+    const userSession = await Sessions.findOne({
+      where: { userId, lobbyCode: code },
+    })
+
     socket.join(code)
-    socket.emit(
-      'setLeader',
-      await User.findOne({ where: { socket: socket.id } }).then(
-        (user) => user?.lobbyLeader
-      )
-    )
+    socket.emit('setLeader', userSession!.lobbyLeader)
     try {
       const countOfPlayers = await Lobby.findOne({
         where: { lobbyCode: code },
@@ -41,8 +59,16 @@ export const joinLobby = async (socket: any, code: string) => {
       console.log(e)
     }
 
-    const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
+    const playersInLobby = await User.findAll({
+      include: {
+        model: Sessions,
+        as: 'Sessions',
+        where: { lobbyCode: code, inGame: true },
+      },
+    })
     const arrOfNicks = playersInLobby.map((user) => user.nick)
+
+    console.log(arrOfNicks)
 
     io.to(code).emit('updatePlayers', arrOfNicks)
   }

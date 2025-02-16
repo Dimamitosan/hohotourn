@@ -1,6 +1,8 @@
 import { where } from 'sequelize'
 import Lobby from '../../models/Lobby'
 import User from '../../models/User'
+import Sessions from '@/models/Sessions'
+import sequelize from '@/config/db'
 
 import { io } from '../index'
 
@@ -12,8 +14,13 @@ export const createLobby = async (
   socket: any,
   [countOfPlayers, countOfRounds, isLobbyOpen]: [number, number, boolean]
 ) => {
+  console.log('creating lobby ......')
   const code = generateLobbyCode()
   try {
+    const userId = await User.findOne({ where: { socket: socket.id } }).then(
+      (user) => user!.id
+    )
+
     await Lobby.create({
       lobbyCode: code,
       gameStarted: false,
@@ -22,15 +29,29 @@ export const createLobby = async (
       usedQuestions: '',
       isOpen: isLobbyOpen,
       countOfPlayers: 0,
+      isPaused: false,
     })
-    await User.update(
-      { lobbyCode: code, lobbyLeader: true },
-      { where: { socket: socket.id } }
-    )
+    console.log('lobby created....')
+
+    try {
+      await Sessions.create({
+        userId: userId,
+        lobbyCode: code,
+        lobbyLeader: true,
+        inGame: true,
+        inRound: true,
+        score: 0,
+      })
+    } catch (e) {
+      console.log('lobby err')
+    }
+
     socket.join(code)
     socket.emit('lobbyCreated', code)
 
-    const playersInLobby = await User.findAll({ where: { lobbyCode: code } })
+    const playersInLobby = await User.findAll({
+      include: { model: Sessions, as: 'Sessions', where: { lobbyCode: code } },
+    })
     const arrOfNicks = playersInLobby.map((user) => user.nick)
 
     io.to(code).emit('updatePlayers', arrOfNicks)
@@ -40,32 +61,67 @@ export const createLobby = async (
 }
 
 export const quitFromLobby = async (socket: any, code: string) => {
-  await User.update(
-    { lobbyCode: null, lobbyLeader: null },
-    { where: { socket: socket.id } }
-  )
+  const quitSession = await Sessions.findOne({
+    include: { model: User, as: 'User', where: { socket: socket.id } },
+    where: { lobbyCode: code },
+  })
+
+  console.log(await Lobby.findOne({ where: { lobbyCode: code } }))
+
   const countOfPlayers = await Lobby.findOne({
     where: { lobbyCode: code },
   }).then((lobby) => lobby!.countOfPlayers)
 
+  if (quitSession!.lobbyLeader && countOfPlayers > 1) {
+    await quitSession!.destroy()
+    socket.leave(code)
+    const userIdOfNewLeader = await Sessions.findOne({
+      where: { lobbyCode: code, inGame: true },
+    }).then((session) => session!.userId)
+
+    await Sessions.update(
+      { lobbyLeader: true },
+      { where: { userId: userIdOfNewLeader, lobbyCode: code } }
+    )
+
+    const socketOfNewLeader = await User.findOne({
+      include: { model: Sessions, as: 'Sessions' },
+      where: { id: userIdOfNewLeader },
+    }).then((user) => user!.socket)
+
+    socket.to(socketOfNewLeader).emit('setLeader', true)
+  } else {
+    await quitSession!.destroy()
+    socket.leave(code)
+  }
+
+  const countOfPlayersInLobbyNow = await Sessions.count({
+    where: { lobbyCode: code, inGame: true },
+  })
+
   await Lobby.update(
-    { countOfPlayers: countOfPlayers - 1 },
+    { countOfPlayers: countOfPlayersInLobbyNow },
     { where: { lobbyCode: code } }
   )
 
   const playersInLobby = await User.findAll({
-    where: { lobbyCode: code },
+    include: {
+      model: Sessions,
+      as: 'Sessions',
+      where: { lobbyCode: code, inGame: true },
+    },
   })
-
   const arrOfNicks = playersInLobby.map((user) => user.nick)
+  console.log(arrOfNicks, 'nicks after leave')
 
   if (
-    (await User.findAll({
+    (await Lobby.findOne({
       where: { lobbyCode: code },
-    }).then((users) => users.length === 0)) &&
+    }).then((lobby) => lobby!.countOfPlayers === 0)) &&
     code
   ) {
     await Lobby.destroy({ where: { lobbyCode: code } })
+    await Sessions.destroy({ where: { lobbyCode: code } })
   } else {
     if (code) {
       io.to(code).emit('updatePlayers', arrOfNicks)

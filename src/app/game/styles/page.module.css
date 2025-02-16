@@ -8,7 +8,7 @@
 .timeAndPause {
   display: flex;
   width: 100%;
-  padding: 8vw 8vw 10vw 8vw;
+  padding: 0vw 8vw 10vw 8vw;
   justify-content: space-between;
 }
 .timer {
@@ -37,16 +37,70 @@
 
 .body {
   display: block;
+
   /* padding: 3vh 0 10vh 0; */
+
   height: 60vh;
 }
 
 .footer {
-  display: grid;
+  display: flex;
 }
 
 .lobby {
-  padding-top: 3vh;
-  padding-bottom: 2vh;
+  padding-top: 3vw;
+  padding-bottom: 2vw;
   font-size: 24px;
+}
+
+.waiting {
+  min-height: 40vw;
+  margin-top: 12vw;
+  width: 80vw;
+  padding: 5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background-color: rgb(253 229 170);
+  border-radius: 35px;
+}
+
+.backToMenu {
+  margin-top: 5vh;
+  cursor: pointer;
+  height: 15vw;
+  color: black;
+  font-size: 16px;
+  text-align: center;
+  align-items: center;
+  border-radius: 35px;
+  border: none;
+  display: grid;
+  background-color: rgb(253 229 170);
+  width: 70vw;
+}
+
+.popup {
+  position: absolute;
+  text-align: center;
+
+  left: 50vw;
+  transform: translateX(-50%);
+  background-color: white; /* Цвет фона */
+  color: black; /* Цвет текста */
+  padding: 15px;
+  border-radius: 15px;
+  animation: popupSlideUp 6s forwards; /* Добавляем анимацию */
+}
+
+@keyframes popupSlideUp {
+  from {
+    bottom: 70%;
+    opacity: 1; /* Прозрачность в начале анимации */
+  }
+  to {
+    bottom: 120%; /* Улетает вверх за пределы контейнера */
+    opacity: 0.2; /* Увеличиваем непрозрачность */
+  }
 }

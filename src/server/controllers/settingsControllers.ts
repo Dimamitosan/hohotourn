@@ -1,6 +1,9 @@
 import User from '../../models/User'
 import Lobby from '../../models/Lobby'
+import Sessions from '@/models/Sessions'
 import { io } from '../index'
+import { where } from 'sequelize'
+// import gameStates from './lobbyPauses'
 
 export const userEnter = async (socket: any, [telegramId, nick]: any) => {
   const user = await User.findOne({ where: { telegramId } }).then(
@@ -10,19 +13,11 @@ export const userEnter = async (socket: any, [telegramId, nick]: any) => {
     try {
       await User.findOrCreate({
         where: { telegramId },
-        defaults: { nick, coins: 0, score: 0 },
+        defaults: { nick },
       })
       await User.update(
         {
           socket: socket.id,
-          lobbyCode: null,
-          lobbyLeader: null,
-          score: 0,
-          number: null,
-          question: null,
-          firstAnswer: null,
-          secondAnswer: null,
-          voteNumber: null,
         },
         { where: { telegramId } }
       )
@@ -45,19 +40,11 @@ export const userEnter = async (socket: any, [telegramId, nick]: any) => {
     try {
       await User.findOrCreate({
         where: { telegramId },
-        defaults: { nick, coins: 0, score: 0 },
+        defaults: { nick },
       })
       await User.update(
         {
           socket: socket.id,
-          lobbyCode: null,
-          lobbyLeader: null,
-          score: 0,
-          number: null,
-          question: null,
-          firstAnswer: null,
-          secondAnswer: null,
-          voteNumber: null,
         },
         { where: { telegramId } }
       )
@@ -70,56 +57,116 @@ export const userEnter = async (socket: any, [telegramId, nick]: any) => {
 export const disconnect = async (socket: any) => {
   console.log('user disconnected', socket.id)
 
-  try {
-    const disconectedLobbyCode = await User.findOne({
-      where: { socket: socket.id },
-    }).then((user) => user!.lobbyCode)
+  if (
+    await Sessions.findOne({
+      include: { model: User, as: 'User', where: { socket: socket.id } },
+      where: { inGame: true, inRound: true },
+    })
+  ) {
+    const code = await Sessions.findOne({
+      include: { model: User, as: 'User', where: { socket: socket.id } },
+      where: { inGame: true, inRound: true },
+    }).then((session) => session!.lobbyCode)
 
-    console.log('disconectedLobbyCode', disconectedLobbyCode)
-
-    await User.update(
-      {
-        lobbyCode: null,
-        lobbyLeader: null,
-        question: null,
-        number: null,
-        voteNumber: null,
-        socket: null,
-        firstAnswer: null,
-        secondAnswer: null,
-        score: 0,
-      },
-      { where: { socket: socket.id } }
+    const userName = await User.findOne({ where: { socket: socket.id } }).then(
+      (user) => user!.nick
     )
 
-    if (disconectedLobbyCode) {
-      const countOfPlayers = await Lobby.findOne({
-        where: { lobbyCode: disconectedLobbyCode },
-      }).then((lobby) => lobby!.countOfPlayers)
+    const quitSession = await Sessions.findOne({
+      include: { model: User, as: 'User', where: { socket: socket.id } },
+      where: { lobbyCode: code },
+    })
 
-      await Lobby.update(
-        { countOfPlayers: countOfPlayers - 1 },
-        { where: { lobbyCode: disconectedLobbyCode } }
-      )
+    // const countOfPlayers = await Lobby.findOne({
+    //   where: { lobbyCode: code },
+    // }).then((lobby) => lobby!.countOfPlayers)
 
-      const playersInLobby = await User.findAll({
-        where: { lobbyCode: disconectedLobbyCode },
-      })
+    await quitSession!.update({
+      inGame: false,
+      inRound: true,
+    })
+    // const gameStarted = await Lobby.findOne({
+    //   where: { lobbyCode: code },
+    // }).then((lobby) => lobby!.gameStarted)
 
-      const arrOfNicks = playersInLobby.map((user) => user.nick)
+    // if (quitSession!.lobbyLeader && countOfPlayers > 1 && !gameStarted) {
+    //   socket.leave(code)
 
-      if (
-        (await User.findAll({
-          where: { lobbyCode: disconectedLobbyCode },
-        }).then((users) => users.length === 0)) &&
-        disconectedLobbyCode
-      ) {
-        await Lobby.destroy({ where: { lobbyCode: disconectedLobbyCode } })
-      } else {
-        if (disconectedLobbyCode) {
-          io.to(disconectedLobbyCode).emit('updatePlayers', arrOfNicks)
-        }
+    //   await quitSession!.update({
+    //     lobbyLeader: false,
+    //   })
+
+    //   const userIdOfNewLeader = await Sessions.findOne({
+    //     where: { lobbyCode: code, inGame: true, inRound: true },
+    //   }).then((session) => session!.userId)
+
+    //   await Sessions.update(
+    //     { lobbyLeader: false },
+    //     { where: { lobbyCode: code } }
+    //   )
+
+    //   await Sessions.update(
+    //     { lobbyLeader: true },
+    //     { where: { userId: userIdOfNewLeader, lobbyCode: code } }
+    //   )
+
+    //   const socketOfNewLeader = await User.findOne({
+    //     include: { model: Sessions, as: 'Sessions' },
+    //     where: { id: userIdOfNewLeader },
+    //   }).then((user) => user!.socket)
+
+    //   socket.to(socketOfNewLeader).emit('setLeader', true)
+    // } else {
+    //   socket.leave(code)
+    //   console.log(
+    //     userName,
+    //     'player leaved - ---- -- --- -- -- - -- -- -- - -- -- -'
+    //   )
+
+    //   io.to(code).emit('playerLeave', userName)
+    // }
+
+    socket.leave(code)
+    console.log(
+      userName,
+      'player leaved - ---- -- --- -- -- - -- -- -- - -- -- -'
+    )
+
+    io.to(code).emit('playerLeave', userName)
+
+    const countOfPlayersInLobbyNow = await Sessions.count({
+      where: { lobbyCode: code, inGame: true },
+    })
+
+    await Lobby.update(
+      { countOfPlayers: countOfPlayersInLobbyNow },
+      { where: { lobbyCode: code } }
+    )
+
+    const playersInLobby = await User.findAll({
+      include: {
+        model: Sessions,
+        as: 'Sessions',
+        where: { lobbyCode: code, inGame: true },
+      },
+    })
+    const arrOfNicks = playersInLobby.map((user) => user.nick)
+    console.log(arrOfNicks, 'nicks after leave')
+
+    if (
+      (await Lobby.findOne({
+        where: { lobbyCode: code },
+      }).then((lobby) => lobby!.countOfPlayers === 0)) &&
+      code
+    ) {
+      await Lobby.destroy({ where: { lobbyCode: code } })
+      await Sessions.destroy({ where: { lobbyCode: code } })
+      // delete gameStates[code]
+    } else {
+      if (code) {
+        io.to(code).emit('updatePlayers', arrOfNicks)
       }
     }
-  } catch (e) {}
+  }
+  await User.update({ socket: null }, { where: { socket: socket.id } })
 }
