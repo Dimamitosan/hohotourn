@@ -18,10 +18,29 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
   const [ownerOfSecondAnswer, setOwnerOfSecondAnswer] = useState<string>('')
   const [ownerOfQuestion, setOwnerOfQuestion] = useState<string>('')
   const [numberOfQuestion, setNumberOfQuestion] = useState<number>(1)
-  const [arrOfPlayersVotes, setArrOfPlayersVotes] = useState<any[]>([])
+  const [arrOfPlayersVotes, setArrOfPlayersVotes] = useState<any[]>([
+    [''],
+    [''],
+  ])
   const [numberOfVote, setNumberOfVote] = useState<number | null>(null)
 
   const socket = useSocket()
+
+  useEffect(() => {
+    if (phase === 4) {
+      console.log('askNewNumberOfquestion -----------------aaaaaaaaaaaaaaaa1')
+      socket.emit('askNewNumberOfquestion', code)
+      setNumberOfVote(null)
+    }
+  }, [phase, code])
+
+  useEffect(() => {
+    if (phase === 5) {
+      console.log('askNewNumberOfquestion -----------------aaaaaaaaaaaaaaaa2')
+      socket.emit('askNewNumberOfquestion', code)
+      socket.emit('askArrOfVotes', code)
+    }
+  }, [phase, code])
 
   useEffect(() => {
     socket.on('getNewNumberOfquestion', (number: number) => {
@@ -33,8 +52,9 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [socket, numberOfQuestion])
 
   useEffect(() => {
-    if (phase === 4 && seconds === 15 && canChangeAnswer) {
-      setNumberOfVote(null)
+    if ((phase === 4 && canChangeAnswer) || (phase === 5 && canChangeAnswer)) {
+      //&& seconds === 15
+
       socket.emit('getStragersQuestion', [code, numberOfQuestion])
       socket.on(
         'takeStragersQuestion',
@@ -54,7 +74,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
           setCanVote(canVote)
         }
       )
-      // console.log(strangersAnswers, strangersQuestion, canVote)
+
       setCanChangeAnswer(false)
     }
     return () => {
@@ -73,6 +93,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
   useEffect(() => {
     socket.on('getArrOfVotes', (arrOfVotes: [][]) => {
       setArrOfPlayersVotes(arrOfVotes)
+      console.log(arrOfVotes)
     })
 
     return () => {

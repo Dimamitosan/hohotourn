@@ -23,6 +23,8 @@ import {
   requestRandomQuestion,
   requestQuestions,
   // togglePause,
+  askNewNumberOfquestion,
+  askArrOfVotes,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter, disconnect } from './controllers/settingsControllers'
@@ -111,6 +113,10 @@ io.on('connection', (socket) => {
     findLobbyLeader(socket, code)
   })
 
+  socket.on('askNewNumberOfquestion', (code: string) => {
+    askNewNumberOfquestion(socket, code)
+  })
+
   socket.on('sendAnswers', ([firstAnswer, secondAnswer]: string[]) => {
     sendAnswers(socket, [firstAnswer, secondAnswer])
   })
@@ -130,6 +136,10 @@ io.on('connection', (socket) => {
   socket.on('sendQuestion', (question: string) =>
     sendQuestion(socket, question)
   )
+
+  socket.on('askArrOfVotes', (code: string) => {
+    askArrOfVotes(socket, code)
+  })
 
   socket.on('getStragersQuestion', ([code, number]: [string, number]) => {
     getStragersQuestion(socket, [code, number])

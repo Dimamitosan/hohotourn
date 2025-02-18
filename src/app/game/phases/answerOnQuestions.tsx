@@ -21,14 +21,15 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   const socket = useSocket()
 
   useEffect(() => {
-    if (phase === 3 && seconds === 10) {
+    if (phase === 3) {
+      //&& seconds === 10
       //90
       socket.emit('requestQuestions', code)
     }
     return () => {
       socket.off('requestQuestions')
     }
-  }, [seconds, phase])
+  }, []) //[seconds, phase]
 
   useEffect(() => {
     socket.on('getQuestions', (data: Array<string>) => {

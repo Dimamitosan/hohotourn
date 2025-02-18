@@ -25,7 +25,7 @@
   position: relative;
   align-items: center;
   margin-bottom: 6vw;
-  justify-content: start;
+  justify-content: flex-start;
   width: 72vw;
 }
 
@@ -54,7 +54,7 @@
 
 .inputDone {
   margin-left: 0;
-  justify-self: start;
+  justify-self: flex-start;
   z-index: 1;
   font-size: 20px;
   border: none;

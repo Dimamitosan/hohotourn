@@ -26,7 +26,7 @@ interface PopupProps {
 const Popup: React.FC<PopupProps> = ({ message, onRemove }) => {
   return (
     <div className={style.popup} onAnimationEnd={onRemove}>
-      {message} - покинул игру
+      {message}
     </div>
   )
 }
@@ -64,8 +64,8 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   }, [socket])
 
   useEffect(() => {
-    socket.on('playerLeave', (userName: string) => {
-      createPopup(userName)
+    socket.on('playerConDiscon', (message: string) => {
+      createPopup(message)
     })
   }, [socket])
 

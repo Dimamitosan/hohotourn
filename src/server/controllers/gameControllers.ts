@@ -24,7 +24,15 @@ export const findLobbyLeader = async (socket: any, code: string) => {
 }
 //
 
-async function getArrOfVotes(code: any) {
+export const askNewNumberOfquestion = async (socket: any, code: string) => {
+  const number = await Lobby.findOne({ where: { lobbyCode: code } }).then(
+    (lobby) => lobby!.numberOfQuestion
+  )
+
+  socket.emit('getNewNumberOfquestion', number)
+}
+
+export const askArrOfVotes = async (socket: any, code: any) => {
   const arr: string[][] = [[], []]
 
   await User.findAll({
@@ -45,7 +53,8 @@ async function getArrOfVotes(code: any) {
   }).then((users) => {
     users.map((user) => arr[1].push(user.nick))
   })
-  return arr
+  // return arr
+  socket.emit('getArrOfVotes', arr)
 }
 
 function shuffleArray(array: any[]): string[] {
@@ -152,6 +161,19 @@ export const startGameTimer = async (socket: any, code: string) => {
             { inRound: false },
             { where: { inGame: false } }
           )
+          await Sessions.update({ inRound: true }, { where: { inGame: true } })
+
+          // const lobbyCountOfPlayers = (
+          //   await Sessions.findAll({ where: { lobbyCode: code } })
+          // ).length
+          // console.log(lobbyCountOfPlayers, 'aaaaaaaaaaaaaa count')
+          // if (lobbyCountOfPlayers === 0) {
+          //   await Lobby.destroy({ where: { lobbyCode: code } })
+
+          //   console.log('timer cleared')
+          //   clearInterval(intervalId)
+          // }
+
           countOfQuestions = await Sessions.count({
             where: { lobbyCode: code, inRound: true },
           })
@@ -182,13 +204,20 @@ export const startGameTimer = async (socket: any, code: string) => {
           gamePhase = 4
           waiting = true ///////
         }
+
         if (gameTimerValue < 0 && gamePhase === 4) {
           gameTimerValue = timeForFifthPhase
           gamePhase = 5
         }
-        if (gameTimerValue === timeForFifthPhase && gamePhase === 5) {
-          const arrOfVotes = await getArrOfVotes(code)
 
+        if (gameTimerValue === timeForFifthPhase && gamePhase === 5) {
+          // const arrOfVotes = await getArrOfVotes(code)
+          const countOfFirstVote = await Sessions.count({
+            where: { lobbyCode: code, voteNumber: 1 },
+          })
+          const countOfSecondVote = await Sessions.count({
+            where: { lobbyCode: code, voteNumber: 2 },
+          })
           const usersInLobby = (
             await Sessions.findAll({
               where: { lobbyCode: code, inRound: true },
@@ -215,10 +244,10 @@ export const startGameTimer = async (socket: any, code: string) => {
             }).then((user) => user?.score)) || 0
 
           const scoresForFirstPlayer =
-            firstUserScore + arrOfVotes[0].length * 100 * roundNumber
+            firstUserScore + countOfFirstVote * 100 * roundNumber
 
           const scoresForSecondPlayer =
-            secondUserScore + arrOfVotes[1].length * 100 * roundNumber
+            secondUserScore + countOfSecondVote * 100 * roundNumber
 
           await Sessions.update(
             { score: scoresForFirstPlayer },
@@ -228,10 +257,13 @@ export const startGameTimer = async (socket: any, code: string) => {
             { score: scoresForSecondPlayer },
             { where: { lobbyCode: code, number: secondAnswerNumber } }
           )
-          io.to(code).emit('getArrOfVotes', arrOfVotes)
         }
 
         if (gameTimerValue < 0 && gamePhase === 5) {
+          await Sessions.update(
+            { voteNumber: null },
+            { where: { lobbyCode: code } }
+          )
           if (
             newNumberOfQuestion === countOfQuestions &&
             roundNumber === countOfRounds
@@ -260,9 +292,13 @@ export const startGameTimer = async (socket: any, code: string) => {
         }
         if (gameTimerValue === timeForFourthPhase && gamePhase === 4) {
           newNumberOfQuestion++
-          console.log('numberOfQuestion changed!')
-          setTimeout(() => {}, 1000)
-          io.to(code).emit('getNewNumberOfquestion', newNumberOfQuestion)
+          await Lobby.update(
+            { numberOfQuestion: newNumberOfQuestion },
+            { where: { lobbyCode: code } }
+          )
+          // console.log('numberOfQuestion changed!')
+          // setTimeout(() => {}, 1000)
+          // io.to(code).emit('getNewNumberOfquestion', newNumberOfQuestion)
         }
         if (waiting === true) {
           if (nextGamsePhase === 0 && nextGameTimerValue === 0) {
@@ -325,7 +361,6 @@ export const sendAnswers = async (
 }
 
 export const getStragersQuestion = async (socket: any, [code, number]: any) => {
-  await Sessions.update({ voteNumber: null }, { where: { lobbyCode: code } })
   console.log('getStarngersQuestions')
   setTimeout(async () => {
     const countOfUsers = await Sessions.count({

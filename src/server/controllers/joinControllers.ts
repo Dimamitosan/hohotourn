@@ -12,6 +12,9 @@ export const joinLobby = async (socket: any, code: string) => {
     const userId = await User.findOne({ where: { socket: socket.id } }).then(
       (user) => user!.id
     )
+    const userNick = await User.findOne({ where: { socket: socket.id } }).then(
+      (user) => user!.nick
+    )
 
     if (!(await Sessions.findOne({ where: { userId, lobbyCode: code } }))) {
       try {
@@ -58,7 +61,7 @@ export const joinLobby = async (socket: any, code: string) => {
     } catch (e) {
       console.log(e)
     }
-
+    io.to(code).emit('playerConDiscon', `${userNick} - подключился к игре!`)
     const playersInLobby = await User.findAll({
       include: {
         model: Sessions,
@@ -84,8 +87,10 @@ export const checkLobbyIsFull = async (socket: any, code: string) => {
     if (!lobby) {
       socket.emit('lobbyStatus', 'Мы не нашли такого лобби(', false)
     } else {
-      if (lobby!.gameStarted === true) {
-        socket.emit('lobbyStatus', 'Игра уже началась, зайти нельзя!', false)
+      if (lobby!.gameStarted === true && lobby!.maxPlayers > playersInlobby) {
+        socket.emit('lobbyStatus', 'Игра уже идет, заходи скорее! ', true, true)
+
+        // socket.emit('lobbyStatus', 'Игра уже началась, зайти нельзя!', false)
       } else if (lobby!.maxPlayers > playersInlobby) {
         socket.emit('lobbyStatus', 'Мы тебя ждем, заходи скорее!', true)
       } else if (lobby!.maxPlayers === playersInlobby) {

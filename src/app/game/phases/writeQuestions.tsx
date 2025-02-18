@@ -17,12 +17,16 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   const socket = useSocket()
 
   useEffect(() => {
-    if (phase === 2 && seconds <= 2) {
-      socket.emit('sendQuestion', question)
-    }
-    if (phase === 2 && seconds === 10) {
+    if (phase === 2) {
+      //&& seconds === 10
       //60
       setCanGetRandomQuestion(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (phase === 2 && seconds <= 2) {
+      socket.emit('sendQuestion', question)
     }
 
     return () => {

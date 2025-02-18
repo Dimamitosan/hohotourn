@@ -29,7 +29,7 @@ export const createLobby = async (
       usedQuestions: '',
       isOpen: isLobbyOpen,
       countOfPlayers: 0,
-      isPaused: false,
+      numberOfQuestion: 0,
     })
     console.log('lobby created....')
 

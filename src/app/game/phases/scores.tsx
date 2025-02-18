@@ -14,7 +14,8 @@ const Scores: React.FC<Props> = ({ code, seconds, phase }) => {
   const socket = useSocket()
 
   useEffect(() => {
-    if (phase === 1 && seconds === 5) {
+    if (phase === 1) {
+      //&& seconds === 5
       socket.emit('getScores', code) // Запрос на получение данных
 
       socket.on('scoresData', (data: []) => {
@@ -25,7 +26,7 @@ const Scores: React.FC<Props> = ({ code, seconds, phase }) => {
     return () => {
       socket.off('scoresData') // Удаляем слушателя при размонтировании компонента
     }
-  }, [phase, seconds, code])
+  }, [socket]) //phase, seconds, code
 
   return (
     <div className={style.playersList}>

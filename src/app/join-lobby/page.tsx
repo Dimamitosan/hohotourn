@@ -10,6 +10,8 @@ const JoinLobby = () => {
   const [code, setCode] = useState('')
   const [lobbyStatus, setLobbyStatus] = useState<boolean | null>(null)
   const [lobbyText, setLobbyText] = useState('')
+  const [urlToLobby, setUrlToLobby] = useState('')
+  const [isReconnecting, setIsReconnecting] = useState<boolean>(false)
   const router = useRouter()
   const socket = useSocket()
 
@@ -17,11 +19,20 @@ const JoinLobby = () => {
     if (code.length === 5) {
       socket.emit('checkLobbyIsFull', code)
     }
-    socket.on('lobbyStatus', (text: string, status: boolean) => {
-      setLobbyStatus(status)
-
-      setLobbyText(text)
-    })
+    socket.on(
+      'lobbyStatus',
+      (text: string, status: boolean, canReconnect: boolean = false) => {
+        setLobbyStatus(status)
+        setLobbyText(text)
+        if (canReconnect) {
+          setUrlToLobby(`/game/${code}`)
+          setIsReconnecting(true)
+        } else {
+          setUrlToLobby(`/lobby/${code}`)
+          setIsReconnecting(false)
+        }
+      }
+    )
 
     return () => {
       socket.off('lobbyStatus')
@@ -57,7 +68,12 @@ const JoinLobby = () => {
         {code.length === 5 && lobbyStatus === true && (
           <button
             className={`${style.inputButton} ${style.visible}`}
-            onClick={() => router.push(`/lobby/${code}`)}
+            onClick={() => {
+              router.push(urlToLobby)
+              if (isReconnecting) {
+                socket.emit('joinLobby', code)
+              }
+            }}
           >
             <FontAwesomeIcon icon={faArrowRight} />
           </button>

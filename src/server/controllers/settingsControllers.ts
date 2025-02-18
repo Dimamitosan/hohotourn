@@ -127,12 +127,8 @@ export const disconnect = async (socket: any) => {
     // }
 
     socket.leave(code)
-    console.log(
-      userName,
-      'player leaved - ---- -- --- -- -- - -- -- -- - -- -- -'
-    )
 
-    io.to(code).emit('playerLeave', userName)
+    io.to(code).emit('playerConDiscon', `${userName} - покинул игру.`)
 
     const countOfPlayersInLobbyNow = await Sessions.count({
       where: { lobbyCode: code, inGame: true },
