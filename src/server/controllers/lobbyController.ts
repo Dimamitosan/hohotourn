@@ -161,6 +161,6 @@ export const startTimer = async (socket: any, code: string) => {
 }
 
 export const startGame = async (socket: any, code: string) => {
-  await Lobby.update({ gameStarted: true }, { where: { lobbyCode: code } })
+  // await Lobby.update({ gameStarted: true }, { where: { lobbyCode: code } })
   io.to(code).emit('startGame') // Уведомляем всех участников лобби
 }

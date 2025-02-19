@@ -25,6 +25,7 @@ import {
   // togglePause,
   askNewNumberOfquestion,
   askArrOfVotes,
+  askGameStarted,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import { userEnter, disconnect } from './controllers/settingsControllers'
@@ -32,6 +33,9 @@ import { loadLobbies } from './controllers/openLobbiesControllers'
 
 import bot from './bot/telegramBot'
 import dotenv from 'dotenv'
+
+import EventEmitter from 'events'
+export const eventEmitter = new EventEmitter()
 
 dotenv.config({ path: '../../.env' })
 
@@ -119,6 +123,9 @@ io.on('connection', (socket) => {
 
   socket.on('sendAnswers', ([firstAnswer, secondAnswer]: string[]) => {
     sendAnswers(socket, [firstAnswer, secondAnswer])
+  })
+  socket.on('askGameStarted', (code: string) => {
+    askGameStarted(socket, code)
   })
 
   socket.on('checkLobbyIsFull', (code: string) =>

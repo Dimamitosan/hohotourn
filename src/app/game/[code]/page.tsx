@@ -39,7 +39,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   const [phase, setPhase] = useState<number>(1)
   const [isGameEnded, setIsGameEnded] = useState<boolean>(false)
   const [prevPhase, setPrevPhase] = useState<number>(0)
-  const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
+  const [isGameStarted, setIsGameStarted] = useState<boolean>(true)
   const [popups, setPopups] = useState<Popup[]>([])
 
   const socket = useSocket()
@@ -54,6 +54,18 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   const removePopup = (id: number) => {
     setPopups(popups.filter((popup) => popup.id !== id))
   }
+
+  useEffect(() => {
+    // console.log(`Emitting 'askGameStarted' with code: ${code}`);
+    socket.emit('askGameStarted', code)
+  }, [code])
+
+  useEffect(() => {
+    socket.on('isGameStarted', (isStarted: boolean) => {
+      console.log('get isGame started....', isStarted)
+      setIsGameStarted(isStarted)
+    })
+  }, [socket])
 
   useEffect(() => {
     socket.emit('findLobbyLeader', code)
@@ -71,8 +83,9 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
 
   useEffect(() => {
     if (isLeaderSet) {
-      console.log(lobbyLeader, isGameStarted)
+      console.log(lobbyLeader, isGameStarted, 'lobbyLeader  isGameStarted')
       if (lobbyLeader && !isGameStarted) {
+        console.log('starting the game')
         socket.emit('startGameTimer', code)
         setIsGameStarted(true)
       }
@@ -104,7 +117,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       console.log('socketOn changePause', pause)
       setIsPaused(pause)
     })
-  }, [socket, isPaused]) //isPaused
+  }, [socket, isPaused, isGameStarted]) //isPaused
 
   useEffect(() => {
     socket.on('gameEnded', () => {

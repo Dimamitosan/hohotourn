@@ -40,6 +40,7 @@ Lobby.init(
     gameStarted: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
+      defaultValue: false,
     },
     maxPlayers: {
       type: DataTypes.NUMBER,

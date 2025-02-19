@@ -8,6 +8,7 @@ import Lobby from '@/models/Lobby'
 
 import arrOfQuestions from '../questions'
 
+import { eventEmitter } from '../index'
 //
 export const findLobbyLeader = async (socket: any, code: string) => {
   // const ll = await User.findOne({ where: { socket: socket.id } }).then(
@@ -102,10 +103,18 @@ const setNumbers = async (code: string) => {
 // }
 
 export const startGameTimer = async (socket: any, code: string) => {
+  setupSocketListeners(socket)
   const lobby = await Lobby.findOne({
     where: { lobbyCode: code },
   })
   const countOfRounds = lobby!.countOfRounds
+
+  eventEmitter.on('changeleaderSocket', (newSocket) => {
+    console.log('leader scoket changed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    console.log(socket.id, newSocket.id)
+    socket = newSocket
+    setupSocketListeners(socket)
+  })
 
   console.log(
     countOfRounds,
@@ -120,20 +129,24 @@ export const startGameTimer = async (socket: any, code: string) => {
   let nextGamsePhase = 0
   let nextGameTimerValue = 0
   const timeForFirstPhase = 5
-  const timeForSecondPhase = 10 //60
-  const timeForThirdPhase = 10 //90
+  const timeForSecondPhase = 60 //10
+  const timeForThirdPhase = 90 //10
   const timeForFourthPhase = 15
   const timeForFifthPhase = 10
 
   let countOfQuestions = 0
   let newNumberOfQuestion = 0
 
-  socket.on('togglePause', (code: string) => {
-    console.log('emit changePause')
-    paused = !paused
-    console.log(paused)
-    io.to(code).emit('changePause', paused)
-  })
+  function setupSocketListeners(socket: any) {
+    socket.on('togglePause', (code: string) => {
+      console.log('emit changePause')
+      paused = !paused
+      console.log(paused)
+      io.to(code).emit('changePause', paused)
+    })
+  }
+
+  await Lobby.update({ gameStarted: true }, { where: { lobbyCode: code } })
 
   if (gameTimerValue === 5) {
     const intervalId = setInterval(async () => {
@@ -345,6 +358,22 @@ export const startGameTimer = async (socket: any, code: string) => {
       }
     }, 1000)
   }
+}
+
+export const askGameStarted = async (socket: any, code: string) => {
+  console.log(
+    `Checking if game started for lobby code: ${code}......................................`
+  )
+  const lobby = await Lobby.findOne({ where: { lobbyCode: code } })
+
+  const isStarted = lobby!.gameStarted
+
+  console.log(
+    lobby,
+    isStarted,
+    'isStartedisStartedisStartedisStartedisStartedisStartedisStartedisStartedisStarted.............................................'
+  )
+  socket.emit('isGameStarted', isStarted)
 }
 
 export const sendAnswers = async (

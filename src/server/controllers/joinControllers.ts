@@ -4,17 +4,21 @@ import User from '../../models/User'
 import Sessions from '@/models/Sessions'
 import { Socket } from 'socket.io-client'
 import { io } from '../index'
+import { eventEmitter } from '../index'
 
 export const joinLobby = async (socket: any, code: string) => {
   socket.join(code)
   if (await Lobby.findOne({ where: { lobbyCode: code } })) {
     console.log(socket.id, '- id of connecting user')
+    // const user = await User.findOne({ where: { socket: socket.id } })
     const userId = await User.findOne({ where: { socket: socket.id } }).then(
       (user) => user!.id
     )
+    //user!.id
     const userNick = await User.findOne({ where: { socket: socket.id } }).then(
       (user) => user!.nick
     )
+    //user!.nick
 
     if (!(await Sessions.findOne({ where: { userId, lobbyCode: code } }))) {
       try {
@@ -38,6 +42,8 @@ export const joinLobby = async (socket: any, code: string) => {
         { inGame: true },
         { where: { userId, lobbyCode: code, inGame: false } }
       )
+
+      eventEmitter.emit('changeleaderSocket', socket)
     }
 
     const userSession = await Sessions.findOne({
