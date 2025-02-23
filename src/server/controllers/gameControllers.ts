@@ -1,11 +1,9 @@
 import { Socket } from 'socket.io-client'
 import User from '../../models/User'
 import Sessions from '@/models/Sessions'
-
 import { io } from '../index'
 import { where } from 'sequelize'
 import Lobby from '@/models/Lobby'
-
 import arrOfQuestions from '../questions'
 
 import { eventEmitter } from '../index'
@@ -86,22 +84,6 @@ const setNumbers = async (code: string) => {
   })
 }
 
-// export const togglePause = async (code: string) => {
-//   const currentPauseState = gameStates[code].isPaused
-
-//   const newPauseState = !currentPauseState
-
-//   if (currentPauseState !== newPauseState) {
-//     await Lobby.update(
-//       { isPaused: newPauseState },
-//       { where: { lobbyCode: code } }
-//     )
-//     gameStates[code].isPaused = newPauseState
-
-//     io.to(code).emit('changePause', newPauseState)
-//   }
-// }
-
 export const startGameTimer = async (socket: any, code: string) => {
   setupSocketListeners(socket)
   const lobby = await Lobby.findOne({
@@ -110,16 +92,10 @@ export const startGameTimer = async (socket: any, code: string) => {
   const countOfRounds = lobby!.countOfRounds
 
   eventEmitter.on('changeleaderSocket', (newSocket) => {
-    console.log('leader scoket changed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    console.log(socket.id, newSocket.id)
     socket = newSocket
     setupSocketListeners(socket)
+    socket.emit('isPaused', paused)
   })
-
-  console.log(
-    countOfRounds,
-    'countOfRounds countOfRounds countOfRounds countOfRounds'
-  )
 
   let roundNumber = 1
   let gameTimerValue = 5
@@ -129,22 +105,42 @@ export const startGameTimer = async (socket: any, code: string) => {
   let nextGamsePhase = 0
   let nextGameTimerValue = 0
   const timeForFirstPhase = 5
-  const timeForSecondPhase = 60 //10
-  const timeForThirdPhase = 90 //10
+  const timeForSecondPhase = 10 //60
+  const timeForThirdPhase = 10 //90
   const timeForFourthPhase = 15
   const timeForFifthPhase = 10
+  const waitingTime = 10
+  let isThereOnlyTwoPlayers = false
 
   let countOfQuestions = 0
   let newNumberOfQuestion = 0
 
+  eventEmitter.on('changeTwoPlayersOnly', async () => {
+    isThereOnlyTwoPlayers = !isThereOnlyTwoPlayers
+  })
+
   function setupSocketListeners(socket: any) {
-    socket.on('togglePause', (code: string) => {
+    socket.on('togglePause', async (code: string) => {
       console.log('emit changePause')
+      // paused = !paused
+      paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
+        (lobby) => lobby!.isPaused
+      )
       paused = !paused
       console.log(paused)
       io.to(code).emit('changePause', paused)
+      await Lobby.update({ isPaused: paused }, { where: { lobbyCode: code } })
+    })
+    socket.on('askAboutPause', async (code: string) => {
+      paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
+        (lobby) => lobby!.isPaused
+      )
+
+      socket.emit('answerAboutPause', paused)
     })
   }
+
+  if (lobby!.gameStarted) return
 
   await Lobby.update({ gameStarted: true }, { where: { lobbyCode: code } })
 
@@ -155,19 +151,43 @@ export const startGameTimer = async (socket: any, code: string) => {
       // } else {
       //   clearInterval(intervalId)
       // }
+      eventEmitter.on('destroyTimer', () => {
+        clearInterval(intervalId)
+      })
 
       // console.log(gameStates)
       if (!paused) {
         // console.log(io.sockets.adapter.rooms.get(code))
-        gameTimerValue -= 1
-        const lobbyCountOfPlayers = (
-          await Sessions.findAll({ where: { lobbyCode: code } })
-        ).length
-        if (lobbyCountOfPlayers === 0) {
-          await Lobby.destroy({ where: { lobbyCode: code } })
-          console.log('timer cleared')
-          clearInterval(intervalId)
+
+        if (
+          gamePhase === 1 &&
+          gameTimerValue === timeForFirstPhase &&
+          isThereOnlyTwoPlayers
+        ) {
+          io.to(code).emit('thereOnlyTwoPlayers')
+          console.log(paused, !paused)
+          console.log(
+            'thereOnlyTwoPlayers Server Server Server Server Server Server'
+          )
+          paused = true
+          io.to(code).emit('changePause', paused)
+          await Lobby.update(
+            { isPaused: paused },
+            { where: { lobbyCode: code } }
+          )
         }
+
+        gameTimerValue -= 1
+
+        // const lobbyCountOfPlayers = (
+        //   await Sessions.findAll({ where: { lobbyCode: code } })
+        // ).length
+        // if (lobbyCountOfPlayers === 0) {
+        // await Lobby.destroy({ where: { lobbyCode: code } })
+        // console.log('timer cleared')
+
+        //   clearInterval(intervalId)
+        // }
 
         if (gameTimerValue < 0 && gamePhase === 1) {
           await Sessions.update(
@@ -283,7 +303,7 @@ export const startGameTimer = async (socket: any, code: string) => {
           ) {
             gameTimerValue = timeForFirstPhase
             gamePhase = 1
-            console.log('timer cleared')
+            console.log('timer cleared Game ended')
             io.to(code).emit('gameEnded')
             clearInterval(intervalId)
           } else if (
@@ -317,8 +337,9 @@ export const startGameTimer = async (socket: any, code: string) => {
           if (nextGamsePhase === 0 && nextGameTimerValue === 0) {
             nextGamsePhase = gamePhase
             nextGameTimerValue = gameTimerValue
-            gamePhase = 0
-            gameTimerValue = 5
+            // gamePhase = 0
+            gamePhase = gamePhase * -10
+            gameTimerValue = waitingTime
           }
 
           if (gameTimerValue === 0) {
@@ -345,7 +366,7 @@ export const startGameTimer = async (socket: any, code: string) => {
         io.to(code).emit('gameTimerUpdate', {
           gameTimerValue,
           gamePhase,
-          paused,
+          // paused,
           newNumberOfQuestion,
         }) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
       } else {
@@ -361,18 +382,18 @@ export const startGameTimer = async (socket: any, code: string) => {
 }
 
 export const askGameStarted = async (socket: any, code: string) => {
-  console.log(
-    `Checking if game started for lobby code: ${code}......................................`
-  )
+  // console.log(
+  //   `Checking if game started for lobby code: ${code}......................................`
+  // )
   const lobby = await Lobby.findOne({ where: { lobbyCode: code } })
 
   const isStarted = lobby!.gameStarted
 
-  console.log(
-    lobby,
-    isStarted,
-    'isStartedisStartedisStartedisStartedisStartedisStartedisStartedisStartedisStarted.............................................'
-  )
+  // console.log(
+  //   lobby,
+  //   isStarted,
+  //   'isStartedisStartedisStartedisStartedisStartedisStartedisStartedisStartedisStarted.............................................'
+  // )
   socket.emit('isGameStarted', isStarted)
 }
 
@@ -516,7 +537,7 @@ export const requestQuestions = async (socket: any, code: string) => {
 }
 
 export const voteForAnswer = async (socket: any, answerNumber: number) => {
-  console.log(socket.id, answerNumber)
+  // console.log(socket.id, answerNumber)
 
   const userId = await User.findOne({ where: { socket: socket.id } }).then(
     (user) => user!.id
@@ -530,29 +551,6 @@ export const voteForAnswer = async (socket: any, answerNumber: number) => {
 
 export const getScores = async (socket: any, code: string) => {
   try {
-    //   const session = await Sessions.findAll({
-    //     where: { lobbyCode: code },
-    //     include: [
-    //         {
-    //             model: User,
-    //             attributes: ['nick'], // Получаем только поле nick
-    //         }
-    //     ]
-    // });
-
-    // const players = await Sessions.findAll({
-    //   where: { lobbyCode: code },
-    //   include: {
-    //     model: User,
-    //     as: 'User',
-    //     attributes: ['nick'], // Берём только ник
-    //   },
-    //   attributes: ['score'], // Берём только счёт
-    // }).then((user) => user.map((userr) => [userr.score, userr.User.nick]))
-
-    // // Формируем массив [nick, score]
-    // const result = players.map((player) => [player.User.nick, player.score])
-
     const players = (await Sessions.findAll({
       where: { lobbyCode: code, inGame: true },
       include: [
@@ -571,13 +569,6 @@ export const getScores = async (socket: any, code: string) => {
     ])
 
     console.log(scoresArray, 'scores array')
-    // // Формируем массив [nick, score]
-    // const scoresArray = session.map(session => {
-    //     return [session.User.nick, session.score]; // Здесь session.User - это объект, представляющий пользователя
-    // });
-
-    // const users = await Sessions.findAll({ where: { lobbyCode: code } })
-    // const scoresArray = users.map((user) => [user.nick, user.score]) // Формируем массив [имя, очки]
 
     socket.emit('scoresData', scoresArray) // Отправляем данные клиенту
   } catch (e) {
@@ -589,8 +580,8 @@ export const requestRandomQuestion = async (socket: any, code: string) => {
   const prevQuestions = await Lobby.findOne({
     where: { lobbyCode: code },
   }).then((lobby) => lobby?.usedQuestions)
-  console.log(prevQuestions)
-  console.log(0, arrOfQuestions[0])
+  // console.log(prevQuestions)
+  // console.log(0, arrOfQuestions[0])
   if (prevQuestions!.split(',').length - 1 >= arrOfQuestions.length) {
     socket.emit('getRandomQuestion', 'Вопросы кончились :-(')
   } else {

@@ -25,6 +25,12 @@ const CreateLobby = () => {
     setIsLobbyOpen(checked)
   }
 
+  useEffect(() => {
+    socket.on('disconnect', () => {
+      router.push(`/`)
+    })
+  }, [socket])
+
   return (
     <div className={style.body}>
       <button className={style.back} onClick={() => router.push(`/`)}>

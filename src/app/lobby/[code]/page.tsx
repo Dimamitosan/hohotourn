@@ -19,18 +19,22 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
   const [players, setPlayers] = useState<string[]>([])
   const [lobbyLeader, setLobbyLeader] = useState<boolean>(false)
-  const [timer, setTimer] = useState<number>(5)
+  const [timer, setTimer] = useState<number>(6)
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
   const [maxPlayers, setMaxPlayers] = useState<number>(0)
   const [timerStarted, setTimerStarted] = useState<boolean>(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isButtonEnabled, setIsButtonEnabled] = useState(true)
+  const [canLeave, setCanLeave] = useState<boolean>(true)
 
   useEffect(() => {
     socket.on('cancelStart', () => {
       setTimerStarted(false)
+      setCanLeave(true)
       setTimer(5)
     })
     socket.on('timerStarted', () => {
+      setCanLeave(false)
       setTimerStarted(true)
     })
     return () => {
@@ -44,6 +48,12 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
       socket.emit('joinLobby', code)
     }
   }, [])
+
+  useEffect(() => {
+    socket.on('disconnect', () => {
+      router.push(`/`)
+    })
+  }, [socket])
 
   useEffect(() => {
     if (code) {
@@ -76,7 +86,19 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
         socket.off('updatePlayers', handleUpdatePlayers)
       }
     }
-  }, [socket, code])
+  }, [socket, code, isGameStarted])
+
+  useEffect(() => {
+    let timer: any
+    if (!isButtonEnabled) {
+      timer = setTimeout(() => {
+        setIsButtonEnabled(true)
+      }, 1000) // 1 секунда
+    }
+
+    // Очистка таймера при размонтировании компонента или перед повторным вызовом useEffect
+    return () => clearTimeout(timer)
+  }, [isButtonEnabled])
 
   useEffect(() => {
     socket.on('timerUpdate', (newTime: number) => {
@@ -93,10 +115,14 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   }, [timerStarted, timer])
 
   const handleStartGame = () => {
+    setIsButtonEnabled(false)
+    setTimer(5)
     if (!timerStarted) {
       setTimerStarted(true)
+
       socket.emit('startTimer', code)
     } else {
+      setTimer(6)
       socket.emit('toggleStart', code)
     }
   }
@@ -133,15 +159,57 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
           ))}
         </ol>
       </div>
+
       <div className={style.buttons}>
-        {lobbyLeader && !isGameStarted ? (
-          <button className={style.button} onClick={handleStartGame}>
-            <p> {timerStarted ? 'Отмена' : 'Начать игру'}</p>
+        {lobbyLeader ? (
+          canLeave ? (
+            <button
+              disabled={!isButtonEnabled}
+              className={`${style.button} ${
+                isButtonEnabled ? null : style.disabled
+              }`}
+              onClick={handleStartGame}
+            >
+              <p> Начать игру</p>
+            </button>
+          ) : (
+            <button
+              disabled={!isButtonEnabled}
+              className={`${style.button} ${
+                isButtonEnabled ? null : style.disabled
+              }`}
+              onClick={handleStartGame}
+            >
+              <p>Отмена</p>
+            </button>
+          )
+        ) : null}
+        {/* {lobbyLeader && !isGameStarted ? (
+          <button
+            disabled={!isButtonEnabled}
+            className={`${style.button} ${
+              isButtonEnabled ? null : style.disabled
+            }`}
+            onClick={handleStartGame}
+          >
+            <p> Начать игру</p>
+          </button>
+        ) : (
+          <button
+            disabled={!isButtonEnabled}
+            className={`${style.button} ${
+              isButtonEnabled ? null : style.disabled
+            }`}
+            onClick={handleStartGame}
+          >
+            <p> Отмена</p>
+          </button>
+        )} */}
+        {canLeave ? (
+          <button className={style.button} onClick={quit}>
+            <p>Выйти</p>
           </button>
         ) : null}
-        <button className={style.button} onClick={quit}>
-          <p>Выйти</p>
-        </button>
       </div>
     </div>
   )

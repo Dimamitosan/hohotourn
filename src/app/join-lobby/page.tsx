@@ -16,6 +16,12 @@ const JoinLobby = () => {
   const socket = useSocket()
 
   useEffect(() => {
+    socket.on('disconnect', () => {
+      router.push(`/`)
+    })
+  }, [socket])
+
+  useEffect(() => {
     if (code.length === 5) {
       socket.emit('checkLobbyIsFull', code)
     }

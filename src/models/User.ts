@@ -36,6 +36,7 @@ User.init(
     coins: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      defaultValue: 0,
     },
     telegramId: {
       type: new DataTypes.STRING(),

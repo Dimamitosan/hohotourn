@@ -6,6 +6,7 @@ import Scores from '../phases/scores'
 import WriteQuestions from '../phases/writeQuestions'
 import AnswerOnQuestions from '../phases/answerOnQuestions'
 import VoteForAnswer from '../phases/voteForAnswer'
+import Warning from '../modal/modal'
 
 import style from '../styles/page.module.css'
 
@@ -35,12 +36,15 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   const [lobbyLeader, setLobbyLeader] = useState<boolean>(false)
   const [isLeaderSet, setIsLeaderSet] = useState<boolean>(false)
   const [seconds, setSeconds] = useState(5)
-  const [isPaused, setIsPaused] = useState(false)
+  const [isPaused, setIsPaused] = useState<boolean>(false)
   const [phase, setPhase] = useState<number>(1)
   const [isGameEnded, setIsGameEnded] = useState<boolean>(false)
   const [prevPhase, setPrevPhase] = useState<number>(0)
-  const [isGameStarted, setIsGameStarted] = useState<boolean>(true)
+  const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
   const [popups, setPopups] = useState<Popup[]>([])
+  const [warningAbuotTwoPlayers, setWarningAbuotTwoPlayers] =
+    useState<boolean>(false)
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
   const socket = useSocket()
   const router = useRouter()
@@ -56,14 +60,16 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   }
 
   useEffect(() => {
-    // console.log(`Emitting 'askGameStarted' with code: ${code}`);
-    socket.emit('askGameStarted', code)
-  }, [code])
+    socket.on('disconnect', () => {
+      router.push(`/`)
+    })
+  }, [socket])
 
   useEffect(() => {
-    socket.on('isGameStarted', (isStarted: boolean) => {
-      console.log('get isGame started....', isStarted)
-      setIsGameStarted(isStarted)
+    socket.on('thereOnlyTwoPlayers', () => {
+      console.log('thereOnlyTwoPlayers Client')
+      setWarningAbuotTwoPlayers(true)
+      setIsModalOpen(true)
     })
   }, [socket])
 
@@ -76,6 +82,20 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   }, [socket])
 
   useEffect(() => {
+    if (isLeaderSet) {
+      socket.emit('askAboutPause', code)
+    }
+  }, [socket, isLeaderSet])
+
+  useEffect(() => {
+    if (isLeaderSet) {
+      socket.on('answerAboutPause', (paused: boolean) => {
+        setIsPaused(paused)
+      })
+    }
+  }, [socket, isLeaderSet])
+
+  useEffect(() => {
     socket.on('playerConDiscon', (message: string) => {
       createPopup(message)
     })
@@ -83,9 +103,9 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
 
   useEffect(() => {
     if (isLeaderSet) {
-      console.log(lobbyLeader, isGameStarted, 'lobbyLeader  isGameStarted')
+      // console.log(lobbyLeader, isGameStarted, 'lobbyLeader  isGameStarted')
       if (lobbyLeader && !isGameStarted) {
-        console.log('starting the game')
+        // console.log('starting the game')
         socket.emit('startGameTimer', code)
         setIsGameStarted(true)
       }
@@ -99,12 +119,15 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       ({
         gameTimerValue,
         gamePhase,
+        paused,
       }: {
         gameTimerValue: number
         gamePhase: number
+        paused: boolean
       }) => {
         setSeconds(gameTimerValue)
         setPhase(gamePhase)
+        // setIsPaused(paused)
         if (gamePhase !== 0) {
           setPrevPhase(gamePhase)
         }
@@ -131,6 +154,8 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     socket.emit('togglePause', code)
   }
 
+  const closeModal = () => setIsModalOpen(false)
+
   return (
     <div className={style.content}>
       <div>
@@ -142,6 +167,19 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
           />
         ))}
       </div>
+      {/* <div
+        className={`${style.warningPopup} ${
+          warningAbuotTwoPlayers ? null : style.unVisible
+        }`}
+      >
+        <p>
+          В игре осталось меньше трех игроков, так играть не интересно,
+          подождите пожалуйста когда вернется хотябы один игрок.
+        </p>
+      </div> */}
+
+      <Warning isOpen={isModalOpen} onClose={closeModal}></Warning>
+
       <div className={style.header}>
         <p className={style.lobby}>Код лобби: {code}</p>
 
@@ -165,9 +203,9 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
         </div>
       </div>
       <div className={style.body}>
-        {phase === 0 ? (
+        {phase < 0 ? (
           <div className={style.waiting}>
-            {prevPhase === 1 ? (
+            {phase === -20 ? ( //prevPhase
               <>
                 <p>
                   Придумайте шуточный вопрос, он достанется двум другим
@@ -177,19 +215,19 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
                 <br />
                 <p>Вопрос и ответы отправляются сами, по истечению времени!</p>
               </>
-            ) : prevPhase === 2 ? (
+            ) : phase === -30 ? (
               <>
                 <p>Напишите два ответа на чужие вопросы.</p>
                 <br />
                 <p>Вопрос и ответы отправляются сами, по истечению времени!</p>
               </>
-            ) : prevPhase === 3 ? (
+            ) : phase === -40 ? (
               <>
                 <p>Голосуйте за самый смешной ответ!</p>
                 <br />
                 <p>Если вы передумали - вы можете изменить свой выбор.</p>
               </>
-            ) : prevPhase === 5 ? (
+            ) : phase === -10 ? (
               <p>Давайте посмотрим на результаты!</p>
             ) : null}
           </div>

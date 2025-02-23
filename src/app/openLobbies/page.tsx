@@ -19,6 +19,11 @@ const OpenLobbies = () => {
       socket.off('loadLobbies')
     }
   }, [])
+  useEffect(() => {
+    socket.on('disconnect', () => {
+      router.push(`/`)
+    })
+  }, [socket])
 
   useEffect(() => {
     socket.on('lobbiesLoaded', (newLobbies: []) => {

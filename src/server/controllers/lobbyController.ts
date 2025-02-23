@@ -30,6 +30,7 @@ export const createLobby = async (
       isOpen: isLobbyOpen,
       countOfPlayers: 0,
       numberOfQuestion: 0,
+      isPaused: false,
     })
     console.log('lobby created....')
 
@@ -129,35 +130,85 @@ export const quitFromLobby = async (socket: any, code: string) => {
   }
 }
 
+// export const startTimer = async (socket: any, code: string) => {
+//   let timerValue = 5
+//   let cancel = false
+
+//   // socket.off('toggleStart') ////
+
+//   if (timerValue === 5) {
+//     io.to(code).emit('timerStarted')
+//     const intervalId = setInterval(() => {
+//       socket.on('toggleStart', (code: string) => {
+//         console.log('emit changePause')
+//         cancel = !cancel
+//         console.log(cancel)
+//         clearInterval(intervalId)
+//         io.to(code).emit('cancelStart')
+//       })
+
+//       if (!cancel) {
+//         timerValue--
+//         console.log('time ticking', timerValue)
+//         io.to(code).emit('timerUpdate', timerValue) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
+
+//         // Остановка таймера, когда он достигает 0
+//         if (timerValue <= 0) {
+//           console.log('timer cleared')
+//           clearInterval(intervalId)
+//           timerValue = 5 // Сбрасываем таймер
+//         }
+//       } else {
+//         clearInterval(intervalId)
+//         io.to(code).emit('timerUpdate', 5)
+//       }
+//     }, 1000)
+//   }
+// }
+
 export const startTimer = async (socket: any, code: string) => {
   let timerValue = 5
   let cancel = false
-  socket.on('toggleStart', (code: string) => {
-    console.log('emit changePause')
-    cancel = !cancel
-    console.log(cancel)
-    io.to(code).emit('cancelStart')
-  })
-  if (timerValue === 5) {
-    io.to(code).emit('timerStarted')
-    const intervalId = setInterval(() => {
-      if (!cancel) {
-        timerValue--
-        console.log('time ticking', timerValue)
-        io.to(code).emit('timerUpdate', timerValue) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
+  let intervalId: NodeJS.Timeout | null = null // Declare intervalId at a higher scope
 
-        // Остановка таймера, когда он достигает 0
-        if (timerValue <= 0) {
-          console.log('timer cleared')
-          clearInterval(intervalId)
-          timerValue = 5 // Сбрасываем таймер
-        }
-      } else {
-        clearInterval(intervalId)
-        io.to(code).emit('timerUpdate', 5)
-      }
-    }, 1000)
+  // Check if the timer is already running
+  if (intervalId) {
+    console.log('Timer already running, ignoring this start request.')
+    return // Early return to prevent starting a new timer
   }
+
+  io.to(code).emit('timerStarted') // Notify everyone that the timer has started
+  intervalId = setInterval(() => {
+    socket.on('toggleStart', (code: string) => {
+      console.log('emit changePause')
+      cancel = !cancel
+      console.log('Cancel state toggled:', cancel)
+      if (cancel) {
+        clearInterval(intervalId!)
+        intervalId = null // Clear the reference
+        io.to(code).emit('cancelStart')
+      } else {
+        console.log('Timer resumed')
+      }
+    })
+
+    if (!cancel) {
+      timerValue--
+      console.log('Time ticking:', timerValue)
+      io.to(code).emit('timerUpdate', timerValue)
+
+      if (timerValue <= 0) {
+        console.log('Timer completed, clearing interval')
+        clearInterval(intervalId!)
+        intervalId = null // Clear the reference for the interval
+        timerValue = 5 // Reset the timer value
+      }
+    } else {
+      clearInterval(intervalId!)
+      intervalId = null // Clear the reference
+      io.to(code).emit('timerUpdate', 5)
+    }
+  }, 1000)
 }
 
 export const startGame = async (socket: any, code: string) => {

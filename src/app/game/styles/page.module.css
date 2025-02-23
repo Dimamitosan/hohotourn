@@ -94,6 +94,20 @@
   animation: popupSlideUp 6s forwards; /* Добавляем анимацию */
 }
 
+.warningPopup {
+  border: 2px solid black;
+  width: 50vw;
+  height: 50vw;
+  color: black;
+  position: relative;
+  top: 50%;
+  left: 50%;
+}
+
+.unVisible {
+  visibility: 0;
+}
+
 @keyframes popupSlideUp {
   from {
     bottom: 70%;

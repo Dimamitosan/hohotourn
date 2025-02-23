@@ -76,7 +76,9 @@ export const joinLobby = async (socket: any, code: string) => {
       },
     })
     const arrOfNicks = playersInLobby.map((user) => user.nick)
-
+    if (arrOfNicks.length === 3) {
+      eventEmitter.emit('changeTwoPlayersOnly')
+    }
     console.log(arrOfNicks)
 
     io.to(code).emit('updatePlayers', arrOfNicks)

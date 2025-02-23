@@ -44,6 +44,10 @@
   justify-content: left;
 }
 
+.disabled {
+  opacity: 0.5;
+}
+
 .players {
   padding-bottom: 2vw;
 }

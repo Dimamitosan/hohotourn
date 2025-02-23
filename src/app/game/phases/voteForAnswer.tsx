@@ -28,7 +28,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
 
   useEffect(() => {
     if (phase === 4) {
-      console.log('askNewNumberOfquestion -----------------aaaaaaaaaaaaaaaa1')
+      // console.log('askNewNumberOfquestion -----------------aaaaaaaaaaaaaaaa1')
       socket.emit('askNewNumberOfquestion', code)
       setNumberOfVote(null)
     }
@@ -36,7 +36,7 @@ const VoteForAnswer: React.FC<Props> = ({ code, seconds, phase }) => {
 
   useEffect(() => {
     if (phase === 5) {
-      console.log('askNewNumberOfquestion -----------------aaaaaaaaaaaaaaaa2')
+      // console.log('askNewNumberOfquestion -----------------aaaaaaaaaaaaaaaa2')
       socket.emit('askNewNumberOfquestion', code)
       socket.emit('askArrOfVotes', code)
     }

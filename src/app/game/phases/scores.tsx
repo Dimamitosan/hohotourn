@@ -17,16 +17,24 @@ const Scores: React.FC<Props> = ({ code, seconds, phase }) => {
     if (phase === 1) {
       //&& seconds === 5
       socket.emit('getScores', code) // Запрос на получение данных
-
-      socket.on('scoresData', (data: []) => {
-        data.sort((a, b) => b[1] - a[1])
-        setScores(data) // Обновление состояния с полученными данными
-      })
     }
+  }, [socket]) //phase, seconds, code
+
+  useEffect(() => {
+    socket.on('updatePlayers', (arrOfNicks: []) => {
+      socket.emit('getScores', code) // Запрос на получение данных
+    })
+  }, [socket])
+
+  useEffect(() => {
+    socket.on('scoresData', (data: []) => {
+      data.sort((a, b) => b[1] - a[1])
+      setScores(data) // Обновление состояния с полученными данными
+    })
     return () => {
       socket.off('scoresData') // Удаляем слушателя при размонтировании компонента
     }
-  }, [socket]) //phase, seconds, code
+  }, [socket])
 
   return (
     <div className={style.playersList}>

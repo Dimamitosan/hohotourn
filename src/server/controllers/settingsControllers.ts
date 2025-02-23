@@ -2,8 +2,8 @@ import User from '../../models/User'
 import Lobby from '../../models/Lobby'
 import Sessions from '@/models/Sessions'
 import { io } from '../index'
-import { where } from 'sequelize'
-// import gameStates from './lobbyPauses'
+
+import { eventEmitter } from '../index'
 
 export const userEnter = async (socket: any, [telegramId, nick]: any) => {
   const user = await User.findOne({ where: { telegramId } }).then(
@@ -77,54 +77,10 @@ export const disconnect = async (socket: any) => {
       where: { lobbyCode: code },
     })
 
-    // const countOfPlayers = await Lobby.findOne({
-    //   where: { lobbyCode: code },
-    // }).then((lobby) => lobby!.countOfPlayers)
-
     await quitSession!.update({
       inGame: false,
       inRound: true,
     })
-    // const gameStarted = await Lobby.findOne({
-    //   where: { lobbyCode: code },
-    // }).then((lobby) => lobby!.gameStarted)
-
-    // if (quitSession!.lobbyLeader && countOfPlayers > 1 && !gameStarted) {
-    //   socket.leave(code)
-
-    //   await quitSession!.update({
-    //     lobbyLeader: false,
-    //   })
-
-    //   const userIdOfNewLeader = await Sessions.findOne({
-    //     where: { lobbyCode: code, inGame: true, inRound: true },
-    //   }).then((session) => session!.userId)
-
-    //   await Sessions.update(
-    //     { lobbyLeader: false },
-    //     { where: { lobbyCode: code } }
-    //   )
-
-    //   await Sessions.update(
-    //     { lobbyLeader: true },
-    //     { where: { userId: userIdOfNewLeader, lobbyCode: code } }
-    //   )
-
-    //   const socketOfNewLeader = await User.findOne({
-    //     include: { model: Sessions, as: 'Sessions' },
-    //     where: { id: userIdOfNewLeader },
-    //   }).then((user) => user!.socket)
-
-    //   socket.to(socketOfNewLeader).emit('setLeader', true)
-    // } else {
-    //   socket.leave(code)
-    //   console.log(
-    //     userName,
-    //     'player leaved - ---- -- --- -- -- - -- -- -- - -- -- -'
-    //   )
-
-    //   io.to(code).emit('playerLeave', userName)
-    // }
 
     socket.leave(code)
 
@@ -149,15 +105,17 @@ export const disconnect = async (socket: any) => {
     const arrOfNicks = playersInLobby.map((user) => user.nick)
     console.log(arrOfNicks, 'nicks after leave')
 
-    if (
-      (await Lobby.findOne({
-        where: { lobbyCode: code },
-      }).then((lobby) => lobby!.countOfPlayers === 0)) &&
-      code
-    ) {
+    //await Lobby.findOne({
+    //   where: { lobbyCode: code },
+    // }).then((lobby) => lobby!.countOfPlayers === 0)
+
+    if (arrOfNicks.length === 0 && code) {
+      eventEmitter.emit('destroyTimer')
+      console.log('destroyTimer!!!!')
       await Lobby.destroy({ where: { lobbyCode: code } })
       await Sessions.destroy({ where: { lobbyCode: code } })
-      // delete gameStates[code]
+    } else if (arrOfNicks.length === 2) {
+      eventEmitter.emit('changeTwoPlayersOnly')
     } else {
       if (code) {
         io.to(code).emit('updatePlayers', arrOfNicks)
