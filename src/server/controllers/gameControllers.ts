@@ -115,8 +115,8 @@ export const startGameTimer = async (socket: any, code: string) => {
   let countOfQuestions = 0
   let newNumberOfQuestion = 0
 
-  eventEmitter.on('changeTwoPlayersOnly', async () => {
-    isThereOnlyTwoPlayers = !isThereOnlyTwoPlayers
+  eventEmitter.on('changeTwoPlayersOnly', async (isPlayersNotALot) => {
+    isThereOnlyTwoPlayers = isPlayersNotALot
   })
 
   function setupSocketListeners(socket: any) {
@@ -159,11 +159,7 @@ export const startGameTimer = async (socket: any, code: string) => {
       if (!paused) {
         // console.log(io.sockets.adapter.rooms.get(code))
 
-        if (
-          gamePhase === 1 &&
-          gameTimerValue === timeForFirstPhase &&
-          isThereOnlyTwoPlayers
-        ) {
+        if (isThereOnlyTwoPlayers) {
           io.to(code).emit('thereOnlyTwoPlayers')
           console.log(paused, !paused)
           console.log(
@@ -176,6 +172,24 @@ export const startGameTimer = async (socket: any, code: string) => {
             { where: { lobbyCode: code } }
           )
         }
+
+        // if (
+        //   gamePhase === 1 &&
+        //   gameTimerValue === timeForFirstPhase &&
+        //   isThereOnlyTwoPlayers
+        // ) {
+        //   io.to(code).emit('thereOnlyTwoPlayers')
+        //   console.log(paused, !paused)
+        //   console.log(
+        //     'thereOnlyTwoPlayers Server Server Server Server Server Server'
+        //   )
+        //   paused = true
+        //   io.to(code).emit('changePause', paused)
+        //   await Lobby.update(
+        //     { isPaused: paused },
+        //     { where: { lobbyCode: code } }
+        //   )
+        // }
 
         gameTimerValue -= 1
 
@@ -190,11 +204,11 @@ export const startGameTimer = async (socket: any, code: string) => {
         // }
 
         if (gameTimerValue < 0 && gamePhase === 1) {
-          await Sessions.update(
-            { inRound: false },
-            { where: { inGame: false } }
-          )
-          await Sessions.update({ inRound: true }, { where: { inGame: true } })
+          // await Sessions.update(
+          //   { inRound: false },
+          //   { where: { inGame: false } }
+          // )
+          // await Sessions.update({ inRound: true }, { where: { inGame: true } })
 
           // const lobbyCountOfPlayers = (
           //   await Sessions.findAll({ where: { lobbyCode: code } })
@@ -226,6 +240,12 @@ export const startGameTimer = async (socket: any, code: string) => {
           waiting = true ///////
         }
         if (gameTimerValue < 0 && gamePhase === 2) {
+          await Sessions.update(
+            { inRound: false },
+            { where: { inGame: false } }
+          )
+          await Sessions.update({ inRound: true }, { where: { inGame: true } })
+
           setNumbers(code)
           gameTimerValue = timeForThirdPhase
           gamePhase = 3

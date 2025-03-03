@@ -68,7 +68,12 @@ const JoinLobby = () => {
           maxLength={5}
           value={code}
           onChange={(e) => {
-            handleChangeCode(e.target.value)
+            if (
+              /^[a-zA-Z0-9]*$/.test(e.target.value) ||
+              e.target.value === ''
+            ) {
+              handleChangeCode(e.target.value)
+            }
           }}
         />
         {code.length === 5 && lobbyStatus === true && (

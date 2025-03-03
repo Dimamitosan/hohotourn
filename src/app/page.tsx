@@ -4,9 +4,17 @@ import { useContext, useEffect, useState } from 'react'
 import { webAppContext } from './context/'
 import { useSocket } from './context/SocketContext'
 import style from './Page.module.css'
+import Help from './modal/modal'
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPencil } from '@fortawesome/free-solid-svg-icons'
 
 export default function Home() {
   const [canPlay, setCanPlay] = useState<boolean>(true)
+  const [loadingData, setLoadingData] = useState<boolean>(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [name, setName] = useState<string>('')
+
   const app = useContext(webAppContext)
   const router = useRouter()
   const socket = useSocket()
@@ -22,6 +30,28 @@ export default function Home() {
 
   useEffect(() => {
     if (app.version && socket) {
+      socket.on('getUserName', (name: string) => {
+        setName(name)
+      })
+    }
+  }, [socket, name])
+
+  useEffect(() => {
+    ;(async () => {
+      await setTimeout(() => {
+        setLoadingData(false)
+      }, 4000)
+    })()
+  })
+
+  useEffect(() => {
+    if (app.version && socket) {
+      setName(app.initDataUnsafe.user!.first_name)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (app.version && socket) {
       socket.on('endAnotherSession', () => {
         setCanPlay(false)
       })
@@ -30,6 +60,33 @@ export default function Home() {
       }
     }
   }, [socket, canPlay])
+
+  const changeNick = (newNick: string) => {
+    if (newNick) {
+      setName(newNick)
+      socket.emit('userChangeNick', newNick)
+    }
+  }
+
+  const openModal = () => setIsModalOpen(true)
+  const closeModal = () => setIsModalOpen(false)
+
+  if (loadingData) {
+    return (
+      <div className={style.loading}>
+        <p className={style.loading_text}>Загрузка данных</p>
+        <div className={style.loading_dots}>
+          <ul className={style.dots_row}>
+            <li className={style.dot}></li>
+            <li className={style.dot}></li>
+            <li className={style.dot}> </li>
+            <li className={style.dot}></li>
+            <li className={style.dot}> </li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
 
   if (!canPlay) {
     return <p>Закончите прошлую сессию и перезайдите</p>
@@ -48,8 +105,29 @@ export default function Home() {
             src="/roundBlue.svg"
             alt="roundBlue"
           />
+          {/* app.initDataUnsafe.user!.first_name */}
           <div className={style.header}>
-            <p>Привет, {app.initDataUnsafe.user?.first_name || 'Dima'}</p>
+            <p className={style.hello}>Привет,</p>
+            <div className={style.header_name}>
+              <p>{name}</p>
+              <button onClick={openModal} className={style.changeNick}>
+                <img
+                  className={style.pencil}
+                  src="pencil.svg"
+                  width={18}
+                  height={18}
+                  alt=""
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className={style.content}>
+            <Help
+              isOpen={isModalOpen}
+              onClose={closeModal}
+              changeNick={changeNick}
+            ></Help>
           </div>
           <div className={style.buttons}>
             <button

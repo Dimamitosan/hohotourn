@@ -43,7 +43,7 @@ export const joinLobby = async (socket: any, code: string) => {
         { where: { userId, lobbyCode: code, inGame: false } }
       )
 
-      eventEmitter.emit('changeleaderSocket', socket)
+      // eventEmitter.emit('changeleaderSocket', socket)
     }
 
     const userSession = await Sessions.findOne({

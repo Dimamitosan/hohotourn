@@ -76,10 +76,16 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
   useEffect(() => {
     socket.emit('findLobbyLeader', code)
     socket.on('setLeader', (isLeader: boolean) => {
+      console.log(
+        'setLeader setLeader setLeader setLeader setLeader setLeader setLeader setLeader',
+        isLeader
+      )
       setLobbyLeader(isLeader)
       setIsLeaderSet(true)
+
+      socket.emit('askAboutPause', code)
     })
-  }, [socket])
+  }, [socket, lobbyLeader])
 
   useEffect(() => {
     if (isLeaderSet) {

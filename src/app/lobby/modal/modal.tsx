@@ -8,15 +8,35 @@ import style from './modal.module.css'
 interface HelpProps {
   isOpen: boolean
   onClose: () => void
+  leave: boolean
 }
 
-const Help: React.FC<HelpProps> = ({ isOpen, onClose }) => {
+const Help: React.FC<HelpProps> = ({ isOpen, onClose, leave }) => {
   if (!isOpen) return null
+
+  const router = useRouter()
 
   const handleOverlayClick = (e: any) => {
     if (e.target.classList.contains(style.overlay)) {
       onClose()
     }
+  }
+
+  const returnButton = () => {
+    router.push(`/`)
+  }
+
+  if (leave) {
+    return (
+      <div className={style.overlay_withOut_close} onClick={handleOverlayClick}>
+        <div className={`${style.content} ${style.miniContent}`}>
+          <p className={style.text}>Данное лобби больше не существует!</p>
+          <button className={style.close} onClick={returnButton}>
+            Вернуться в главное меню
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

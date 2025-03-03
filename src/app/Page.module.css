@@ -2,13 +2,33 @@
   /* padding-bottom: 20px; */
 }
 .header {
-  padding: 30vw 15vw 30vw 0;
-  text-align: right;
+  width: 98vw;
+  display: flex;
+  flex-direction: column;
+
+  padding: 15vw 0vw 30vw 35vw;
+  /* text-align: right; */
+  font-size: 18px;
+}
+
+.hello {
+  /* margin: 0; */
+}
+.header_name {
+  padding-top: 2vw;
+  display: flex;
+  flex-direction: row;
+}
+
+.changeNick {
+  margin-left: 2vw;
+  background-color: transparent;
+  border: none;
 }
 
 .buttons {
   display: grid;
-  margin-top: 15vw;
+  margin-top: 25vw;
 }
 
 .button {
@@ -47,4 +67,68 @@
   height: 35vw;
   top: 45vw;
   right: 12vw;
+}
+.loading {
+  /* display: flex;
+  flex-direction: column; */
+  padding-top: 50vw;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+}
+.loading_text {
+  font-size: 22px;
+}
+.loading_dots {
+  padding-top: 5vw;
+}
+.dots_row {
+  display: flex;
+  flex-direction: row;
+
+  justify-content: space-between;
+  width: 30vw;
+  height: 10vw;
+  align-items: center;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  margin: 0;
+  list-style: none;
+  border-radius: 50%;
+  background-color: black;
+
+  /* animation-duration: 3s; */
+  animation: pulse 1s infinite alternate; /* Анимация пульсации */
+}
+
+.dot:nth-child(1) {
+  animation-delay: 0s; /* Нет задержки для первой точки */
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s; /* Задержка в 0.2 секунд для второй точки */
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s; /* Задержка в 0.4 секунд для третьей точки */
+}
+.dot:nth-child(3) {
+  animation-delay: 0.6s; /* Задержка в 0.4 секунд для третьей точки */
+}
+.dot:nth-child(3) {
+  animation-delay: 0.8s; /* Задержка в 0.4 секунд для третьей точки */
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1); /* Начальный размер */
+    opacity: 0.7; /* Начальная прозрачность */
+  }
+  100% {
+    transform: scale(1.5); /* Увеличение размера до 1.5 */
+    opacity: 1; /* Полная непрозрачность */
+  }
 }

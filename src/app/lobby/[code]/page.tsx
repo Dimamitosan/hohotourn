@@ -26,6 +26,25 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isButtonEnabled, setIsButtonEnabled] = useState(true)
   const [canLeave, setCanLeave] = useState<boolean>(true)
+  const [loadingData, setLoadingData] = useState<boolean>(true)
+  const [gemeExists, setGameExists] = useState<boolean>(true)
+
+  useEffect(() => {
+    if (code) {
+      console.log(code)
+      socket.emit('askGameExists', code)
+    }
+  }, [])
+
+  useEffect(() => {
+    socket.on('answerGameExists', (isExists: boolean) => {
+      setGameExists(isExists)
+      if (!isExists) {
+        console.log('qwewqewq', isExists)
+        setIsModalOpen(true)
+      }
+    })
+  }, [socket, isModalOpen])
 
   useEffect(() => {
     socket.on('cancelStart', () => {
@@ -42,6 +61,14 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
       socket.off('timerStarted')
     }
   }, [timerStarted, timer])
+
+  useEffect(() => {
+    ;(async () => {
+      await setTimeout(() => {
+        setLoadingData(false)
+      }, 4000)
+    })()
+  })
 
   useEffect(() => {
     if (code) {
@@ -135,6 +162,24 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   const openModal = () => setIsModalOpen(true)
   const closeModal = () => setIsModalOpen(false)
 
+  if (loadingData) {
+    return (
+      <div className={style.loading}>
+        <p className={style.loading_text}>Создаем комнату</p>
+        <div className={style.loading_dots}>
+          <ul className={style.dots_row}>
+            <li className={style.dot}></li>
+            <li className={style.dot}></li>
+            <li className={style.dot}> </li>
+
+            <li className={style.dot}></li>
+            <li className={style.dot}> </li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={style.content}>
       <p className={style.code}>Код лобби: {code}</p>
@@ -149,7 +194,11 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
         </button>
       )}
 
-      <Help isOpen={isModalOpen} onClose={closeModal}></Help>
+      <Help
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        leave={!gemeExists}
+      ></Help>
 
       <div className={style.playersList}>
         <h3 className={style.players}>Игроки:</h3>
@@ -184,27 +233,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
             </button>
           )
         ) : null}
-        {/* {lobbyLeader && !isGameStarted ? (
-          <button
-            disabled={!isButtonEnabled}
-            className={`${style.button} ${
-              isButtonEnabled ? null : style.disabled
-            }`}
-            onClick={handleStartGame}
-          >
-            <p> Начать игру</p>
-          </button>
-        ) : (
-          <button
-            disabled={!isButtonEnabled}
-            className={`${style.button} ${
-              isButtonEnabled ? null : style.disabled
-            }`}
-            onClick={handleStartGame}
-          >
-            <p> Отмена</p>
-          </button>
-        )} */}
+
         {canLeave ? (
           <button className={style.button} onClick={quit}>
             <p>Выйти</p>

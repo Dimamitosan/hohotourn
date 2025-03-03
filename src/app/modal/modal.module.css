@@ -1,6 +1,7 @@
 /* Modal.css */
 .overlay {
   padding: 10vw;
+  padding-top: 0px;
   position: fixed;
   top: 0;
   left: 0;
@@ -11,43 +12,38 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-}
-.overlay_withOut_close {
-  padding: 10vw;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.text {
-  margin: 10vw 0;
-  text-align: center;
 }
 
 .content {
-  margin-top: 0;
   display: grid;
   background: white;
   padding: 5vw;
-  border-radius: 5vw;
+  border-radius: 25px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.miniContent {
   margin-top: 40vw;
 }
 .text {
   padding: 0 5vw 5vw 5vw;
 }
+.inputText {
+  width: 40vw;
+  height: 10vw;
+  border-radius: 25px;
+  text-align: center;
+  border: black solid 1px;
+  background-color: #f7dfcd;
+}
+.confirm {
+  margin: 5vw auto;
+}
 
-.close {
+.close:hover,
+.confirm:hover {
+  cursor: pointer;
+  border: 2px solid rgb(206 190 230);
+}
+.close,
+.confirm {
   font-size: 18px;
   color: black;
   border: none;
@@ -56,8 +52,4 @@
   border-radius: 35px;
   background-color: rgb(253 229 170);
   /* margin: 5vw auto; */
-}
-
-.li {
-  padding-top: 5vw;
 }

@@ -130,6 +130,16 @@ export const quitFromLobby = async (socket: any, code: string) => {
   }
 }
 
+export const askGameExists = async (socket: any, code: string) => {
+  console.log('qqqqqq', code)
+  console.log(await Lobby.findOne({ where: { lobbyCode: code } }))
+  const gameExists = await Lobby.findOne({ where: { lobbyCode: code } })
+
+  if (!gameExists) {
+    socket.emit('answerGameExists', false)
+  }
+}
+
 // export const startTimer = async (socket: any, code: string) => {
 //   let timerValue = 5
 //   let cancel = false

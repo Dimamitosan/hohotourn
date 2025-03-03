@@ -10,6 +10,7 @@ import {
   startTimer,
   quitFromLobby,
   startGame,
+  askGameExists,
 } from './controllers/lobbyController'
 import {
   sendQuestion,
@@ -28,7 +29,11 @@ import {
   askGameStarted,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
-import { userEnter, disconnect } from './controllers/settingsControllers'
+import {
+  userEnter,
+  disconnect,
+  userChangeNick,
+} from './controllers/settingsControllers'
 import { loadLobbies } from './controllers/openLobbiesControllers'
 
 import bot from './bot/telegramBot'
@@ -97,6 +102,9 @@ io.on('connection', (socket) => {
     userEnter(socket, [telegramId, nick])
   )
 
+  socket.on('userChangeNick', (nick: string) => {
+    userChangeNick(socket, nick)
+  })
   socket.on('loadLobbies', (page: number) => {
     loadLobbies(socket, page)
   })
@@ -115,6 +123,10 @@ io.on('connection', (socket) => {
 
   socket.on('findLobbyLeader', (code: string) => {
     findLobbyLeader(socket, code)
+  })
+
+  socket.on('askGameExists', (code: string) => {
+    askGameExists(socket, code)
   })
 
   socket.on('askNewNumberOfquestion', (code: string) => {
