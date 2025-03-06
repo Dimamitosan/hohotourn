@@ -31,6 +31,16 @@ export const askNewNumberOfquestion = async (socket: any, code: string) => {
   socket.emit('getNewNumberOfquestion', number)
 }
 
+export const deleteSession = async (socket: any, code: string) => {
+  const userId = await User.findOne({ where: { socket: socket.id } }).then(
+    (user) => user!.id
+  )
+
+  console.log(userId, 'fffffff')
+
+  await Sessions.destroy({ where: { lobbyCode: code, userId: userId } })
+}
+
 export const askArrOfVotes = async (socket: any, code: any) => {
   const arr: string[][] = [[], []]
 
@@ -84,18 +94,24 @@ const setNumbers = async (code: string) => {
   })
 }
 
-export const startGameTimer = async (socket: any, code: string) => {
-  setupSocketListeners(socket)
-  const lobby = await Lobby.findOne({
-    where: { lobbyCode: code },
+const handleAskAboutPause = async (socket: any, paused: boolean) => {
+  const session = await Sessions.findOne({
+    include: [{ model: User, as: 'User', where: { socket: socket.id } }],
+    where: { inGame: true, inRound: true },
   })
-  const countOfRounds = lobby!.countOfRounds
+  const code = session!.lobbyCode
+  if (code) {
+    paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
+      (lobby) => lobby!.isPaused
+    )
+  }
+  console.log(code, ',kznm,kznm,kznm,kznm,kznm,kznm33333333333')
 
-  eventEmitter.on('changeleaderSocket', (newSocket) => {
-    socket = newSocket
-    setupSocketListeners(socket)
-    socket.emit('isPaused', paused)
-  })
+  socket.emit('answerAboutPause', paused)
+}
+
+export const startGameTimer = async (socket: any, code: string) => {
+  console.log(code, ',kznm,kznm,kznm,kznm,kznm,kznm')
 
   let roundNumber = 1
   let gameTimerValue = 5
@@ -104,40 +120,72 @@ export const startGameTimer = async (socket: any, code: string) => {
   let waiting = false
   let nextGamsePhase = 0
   let nextGameTimerValue = 0
-  const timeForFirstPhase = 5
-  const timeForSecondPhase = 10 //60
-  const timeForThirdPhase = 10 //90
-  const timeForFourthPhase = 15
-  const timeForFifthPhase = 10
-  const waitingTime = 10
+  const timeForFirstPhase = 1 //5
+  const timeForSecondPhase = 1 //60 10
+  const timeForThirdPhase = 1 //90 10
+  const timeForFourthPhase = 1 //15
+  const timeForFifthPhase = 1 //10
+  const waitingTime = 1 //10
   let isThereOnlyTwoPlayers = false
 
   let countOfQuestions = 0
   let newNumberOfQuestion = 0
 
-  eventEmitter.on('changeTwoPlayersOnly', async (isPlayersNotALot) => {
+  setupSocketListeners(socket, code, paused)
+  const lobby = await Lobby.findOne({
+    where: { lobbyCode: code },
+  })
+  const countOfRounds = lobby!.countOfRounds
+
+  const eventChangeLeaderSocket = (newSocket: any) => {
+    socket = newSocket
+    setupSocketListeners(socket, code, paused)
+    socket.emit('isPaused', paused)
+  }
+
+  const eventChangeTwoPlayersOnly = (isPlayersNotALot: boolean) => {
     isThereOnlyTwoPlayers = isPlayersNotALot
+  }
+
+  const eventDestroyTimer = (intervalId: any) => {
+    clearInterval(intervalId)
+  }
+
+  eventEmitter.on('changeleaderSocket', (socket) =>
+    eventChangeLeaderSocket(socket)
+  )
+
+  eventEmitter.on('changeTwoPlayersOnly', (isPlayersNotALot) => {
+    eventChangeTwoPlayersOnly(isPlayersNotALot)
   })
 
-  function setupSocketListeners(socket: any) {
-    socket.on('togglePause', async (code: string) => {
-      console.log('emit changePause')
-      // paused = !paused
-      paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
-        (lobby) => lobby!.isPaused
-      )
-      paused = !paused
-      console.log(paused)
-      io.to(code).emit('changePause', paused)
-      await Lobby.update({ isPaused: paused }, { where: { lobbyCode: code } })
-    })
-    socket.on('askAboutPause', async (code: string) => {
-      paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
-        (lobby) => lobby!.isPaused
-      )
+  const handleTogglePause = async (code: string) => {
+    //socket: any
+    // console.log(socket, 'fffffffffasdsadadsa')
+    // console.log(socket.id, 'aaaaaaaaaaaaaaa444444')
+    // const session = await Sessions.findOne({
+    //   include: [{ model: User, as: 'User', where: { socket: socket.id } }],
+    //   where: { inGame: true, inRound: true },
+    // })
+    // const code = session!.lobbyCode
+    //paused: boolean
+    console.log(code, ',kznm,kznm,kznm,kznm,kznm,kznm222222222')
+    console.log('emit changePause')
+    // paused = !paused
+    // if (code) {
+    paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
+      (lobby) => lobby!.isPaused
+    )
+    paused = !paused
+    console.log(paused)
+    io.to(code).emit('changePause', paused)
+    await Lobby.update({ isPaused: paused }, { where: { lobbyCode: code } })
+    // }
+  }
 
-      socket.emit('answerAboutPause', paused)
-    })
+  function setupSocketListeners(socket: any, code: string, paused: boolean) {
+    socket.on('togglePause', async (code: string) => handleTogglePause(code)) //paused
+    socket.on('askAboutPause', async () => handleAskAboutPause(socket, paused))
   }
 
   if (lobby!.gameStarted) return
@@ -152,7 +200,17 @@ export const startGameTimer = async (socket: any, code: string) => {
       //   clearInterval(intervalId)
       // }
       eventEmitter.on('destroyTimer', () => {
-        clearInterval(intervalId)
+        eventDestroyTimer(intervalId)
+        eventEmitter.removeListener('destroyTimer', eventDestroyTimer)
+        eventEmitter.removeListener(
+          'changeleaderSocket',
+          eventChangeLeaderSocket
+        )
+        eventEmitter.removeListener(
+          'changeTwoPlayersOnly',
+          eventChangeTwoPlayersOnly
+        )
+        return
       })
 
       // console.log(gameStates)
@@ -326,6 +384,28 @@ export const startGameTimer = async (socket: any, code: string) => {
             console.log('timer cleared Game ended')
             io.to(code).emit('gameEnded')
             clearInterval(intervalId)
+            eventEmitter.removeListener('destroyTimer', eventDestroyTimer)
+            eventEmitter.removeListener(
+              'changeleaderSocket',
+              eventChangeLeaderSocket
+            )
+            eventEmitter.removeListener(
+              'changeTwoPlayersOnly',
+              eventChangeTwoPlayersOnly
+            )
+
+            io.to(code).emit('gameTimerUpdate', {
+              gameTimerValue,
+              gamePhase,
+
+              newNumberOfQuestion,
+            })
+            await Lobby.destroy({ where: { lobbyCode: code } })
+            return
+
+            // socket.off('togglePause', handleTogglePause)
+            // socket.off('askAboutPause', handleAskAboutPause)
+            return
           } else if (
             newNumberOfQuestion < countOfQuestions &&
             roundNumber <= countOfRounds

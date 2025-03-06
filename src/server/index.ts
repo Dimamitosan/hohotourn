@@ -24,6 +24,7 @@ import {
   requestRandomQuestion,
   requestQuestions,
   // togglePause,
+  deleteSession,
   askNewNumberOfquestion,
   askArrOfVotes,
   askGameStarted,
@@ -107,6 +108,10 @@ io.on('connection', (socket) => {
   })
   socket.on('loadLobbies', (page: number) => {
     loadLobbies(socket, page)
+  })
+
+  socket.on('deleteSession', (code: string) => {
+    deleteSession(socket, code)
   })
 
   socket.on('createLobby', (countOfPlayersAndOpen: [number, number, boolean]) =>

@@ -160,6 +160,11 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     socket.emit('togglePause', code)
   }
 
+  const returnToMenu = () => {
+    socket.emit('deleteSession', code)
+    router.push(`/`)
+  }
+
   const closeModal = () => setIsModalOpen(false)
 
   return (
@@ -266,7 +271,7 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
       </div>
       {isGameEnded ? (
         <div className={style.footer}>
-          <button onClick={() => router.push(`/`)} className={style.backToMenu}>
+          <button onClick={returnToMenu} className={style.backToMenu}>
             Выйти в главное меню
           </button>
         </div>
