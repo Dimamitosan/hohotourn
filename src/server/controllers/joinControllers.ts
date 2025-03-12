@@ -39,7 +39,7 @@ export const joinLobby = async (socket: any, code: string) => {
       })
     ) {
       await Sessions.update(
-        { inGame: true },
+        { inGame: true }, ///////Добавил inRound:true inRound: true
         { where: { userId, lobbyCode: code, inGame: false } }
       )
 

@@ -24,21 +24,26 @@ export const findLobbyLeader = async (socket: any, code: string) => {
 //
 
 export const askNewNumberOfquestion = async (socket: any, code: string) => {
-  const number = await Lobby.findOne({ where: { lobbyCode: code } }).then(
-    (lobby) => lobby!.numberOfQuestion
-  )
+  try {
+    const number = await Lobby.findOne({ where: { lobbyCode: code } }).then(
+      (lobby) => lobby!.numberOfQuestion
+    )
 
-  socket.emit('getNewNumberOfquestion', number)
+    socket.emit('getNewNumberOfquestion', number)
+  } catch (e) {
+    console.log(e, 'error askNewNumberOfquestion')
+  }
 }
 
 export const deleteSession = async (socket: any, code: string) => {
-  const userId = await User.findOne({ where: { socket: socket.id } }).then(
-    (user) => user!.id
-  )
+  // const userId = await User.findOne({ where: { socket: socket.id } }).then(
+  //   (user) => user!.id
+  // )
+  // console.log(userId, 'fffffff')
 
-  console.log(userId, 'fffffff')
+  // await Sessions.destroy({ where: { lobbyCode: code, userId: userId } })
 
-  await Sessions.destroy({ where: { lobbyCode: code, userId: userId } })
+  await Sessions.destroy({ where: { lobbyCode: code } })
 }
 
 export const askArrOfVotes = async (socket: any, code: any) => {
@@ -111,373 +116,398 @@ const handleAskAboutPause = async (socket: any, paused: boolean) => {
 }
 
 export const startGameTimer = async (socket: any, code: string) => {
-  console.log(code, ',kznm,kznm,kznm,kznm,kznm,kznm')
+  try {
+    console.log(code, ',kznm,kznm,kznm,kznm,kznm,kznm')
 
-  let roundNumber = 1
-  let gameTimerValue = 5
-  let gamePhase = 1
-  let paused = false
-  let waiting = false
-  let nextGamsePhase = 0
-  let nextGameTimerValue = 0
-  const timeForFirstPhase = 1 //5
-  const timeForSecondPhase = 1 //60 10
-  const timeForThirdPhase = 1 //90 10
-  const timeForFourthPhase = 1 //15
-  const timeForFifthPhase = 1 //10
-  const waitingTime = 1 //10
-  let isThereOnlyTwoPlayers = false
+    let roundNumber = 1
+    let gameTimerValue = 5
+    let gamePhase = 1
+    let paused = false
+    let waiting = false
+    let nextGamsePhase = 0
+    let nextGameTimerValue = 0
+    const timeForFirstPhase = 1 //5
+    const timeForSecondPhase = 1 //60 10
+    const timeForThirdPhase = 1 //90 10
+    const timeForFourthPhase = 1 //15
+    const timeForFifthPhase = 1 //10
+    const waitingTime = 1 //10
+    let isThereOnlyTwoPlayers = false
 
-  let countOfQuestions = 0
-  let newNumberOfQuestion = 0
+    let countOfQuestions = 0
+    let newNumberOfQuestion = 0
 
-  setupSocketListeners(socket, code, paused)
-  const lobby = await Lobby.findOne({
-    where: { lobbyCode: code },
-  })
-  const countOfRounds = lobby!.countOfRounds
-
-  const eventChangeLeaderSocket = (newSocket: any) => {
-    socket = newSocket
     setupSocketListeners(socket, code, paused)
-    socket.emit('isPaused', paused)
-  }
+    const lobby = await Lobby.findOne({
+      where: { lobbyCode: code },
+    })
+    const countOfRounds = lobby!.countOfRounds
 
-  const eventChangeTwoPlayersOnly = (isPlayersNotALot: boolean) => {
-    isThereOnlyTwoPlayers = isPlayersNotALot
-  }
+    const eventChangeLeaderSocket = (newSocket: any) => {
+      socket = newSocket
+      setupSocketListeners(socket, code, paused)
+      socket.emit('isPaused', paused)
+    }
 
-  const eventDestroyTimer = (intervalId: any) => {
-    clearInterval(intervalId)
-  }
+    const eventChangeTwoPlayersOnly = (isPlayersNotALot: boolean) => {
+      isThereOnlyTwoPlayers = isPlayersNotALot
+    }
 
-  eventEmitter.on('changeleaderSocket', (socket) =>
-    eventChangeLeaderSocket(socket)
-  )
+    const eventDestroyTimer = (intervalId: any) => {
+      clearInterval(intervalId)
+    }
 
-  eventEmitter.on('changeTwoPlayersOnly', (isPlayersNotALot) => {
-    eventChangeTwoPlayersOnly(isPlayersNotALot)
-  })
-
-  const handleTogglePause = async (code: string) => {
-    //socket: any
-    // console.log(socket, 'fffffffffasdsadadsa')
-    // console.log(socket.id, 'aaaaaaaaaaaaaaa444444')
-    // const session = await Sessions.findOne({
-    //   include: [{ model: User, as: 'User', where: { socket: socket.id } }],
-    //   where: { inGame: true, inRound: true },
-    // })
-    // const code = session!.lobbyCode
-    //paused: boolean
-    console.log(code, ',kznm,kznm,kznm,kznm,kznm,kznm222222222')
-    console.log('emit changePause')
-    // paused = !paused
-    // if (code) {
-    paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
-      (lobby) => lobby!.isPaused
+    eventEmitter.on('changeleaderSocket', (socket) =>
+      eventChangeLeaderSocket(socket)
     )
-    paused = !paused
-    console.log(paused)
-    io.to(code).emit('changePause', paused)
-    await Lobby.update({ isPaused: paused }, { where: { lobbyCode: code } })
-    // }
-  }
 
-  function setupSocketListeners(socket: any, code: string, paused: boolean) {
-    socket.on('togglePause', async (code: string) => handleTogglePause(code)) //paused
-    socket.on('askAboutPause', async () => handleAskAboutPause(socket, paused))
-  }
+    eventEmitter.on('changeTwoPlayersOnly', (isPlayersNotALot) => {
+      eventChangeTwoPlayersOnly(isPlayersNotALot)
+    })
 
-  if (lobby!.gameStarted) return
+    const handleTogglePause = async (code: string) => {
+      //socket: any
+      // console.log(socket, 'fffffffffasdsadadsa')
+      // console.log(socket.id, 'aaaaaaaaaaaaaaa444444')
+      // const session = await Sessions.findOne({
+      //   include: [{ model: User, as: 'User', where: { socket: socket.id } }],
+      //   where: { inGame: true, inRound: true },
+      // })
+      // const code = session!.lobbyCode
+      //paused: boolean
+      console.log(code, ',kznm,kznm,kznm,kznm,kznm,kznm222222222')
+      console.log('emit changePause')
+      // paused = !paused
+      // if (code) {
 
-  await Lobby.update({ gameStarted: true }, { where: { lobbyCode: code } })
+      try {
+        paused = await Lobby.findOne({ where: { lobbyCode: code } }).then(
+          (lobby) => lobby!.isPaused
+        )
+        paused = !paused
+        console.log(paused)
+        io.to(code).emit('changePause', paused)
+        await Lobby.update({ isPaused: paused }, { where: { lobbyCode: code } })
+      } catch (e) {
+        console.log(
+          e,
+          'pause error pause error pause error pause error pause error pause error pause error'
+        )
+      }
 
-  if (gameTimerValue === 5) {
-    const intervalId = setInterval(async () => {
-      // if (gameStates[code] !== undefined) {
-      //   paused = gameStates[code].isPaused
-      // } else {
-      //   clearInterval(intervalId)
       // }
-      eventEmitter.on('destroyTimer', () => {
-        eventDestroyTimer(intervalId)
-        eventEmitter.removeListener('destroyTimer', eventDestroyTimer)
-        eventEmitter.removeListener(
-          'changeleaderSocket',
-          eventChangeLeaderSocket
-        )
-        eventEmitter.removeListener(
-          'changeTwoPlayersOnly',
-          eventChangeTwoPlayersOnly
-        )
-        return
-      })
+    }
 
-      // console.log(gameStates)
-      if (!paused) {
-        // console.log(io.sockets.adapter.rooms.get(code))
+    function setupSocketListeners(socket: any, code: string, paused: boolean) {
+      socket.on('togglePause', async (code: string) => handleTogglePause(code)) //paused
+      socket.on('askAboutPause', async () =>
+        handleAskAboutPause(socket, paused)
+      )
+    }
 
-        if (isThereOnlyTwoPlayers) {
-          io.to(code).emit('thereOnlyTwoPlayers')
-          console.log(paused, !paused)
-          console.log(
-            'thereOnlyTwoPlayers Server Server Server Server Server Server'
-          )
-          paused = true
-          io.to(code).emit('changePause', paused)
-          await Lobby.update(
-            { isPaused: paused },
-            { where: { lobbyCode: code } }
-          )
-        }
+    if (lobby!.gameStarted) return
 
-        // if (
-        //   gamePhase === 1 &&
-        //   gameTimerValue === timeForFirstPhase &&
-        //   isThereOnlyTwoPlayers
-        // ) {
-        //   io.to(code).emit('thereOnlyTwoPlayers')
-        //   console.log(paused, !paused)
-        //   console.log(
-        //     'thereOnlyTwoPlayers Server Server Server Server Server Server'
-        //   )
-        //   paused = true
-        //   io.to(code).emit('changePause', paused)
-        //   await Lobby.update(
-        //     { isPaused: paused },
-        //     { where: { lobbyCode: code } }
-        //   )
-        // }
+    await Lobby.update({ gameStarted: true }, { where: { lobbyCode: code } })
 
-        gameTimerValue -= 1
-
-        // const lobbyCountOfPlayers = (
-        //   await Sessions.findAll({ where: { lobbyCode: code } })
-        // ).length
-        // if (lobbyCountOfPlayers === 0) {
-        // await Lobby.destroy({ where: { lobbyCode: code } })
-        // console.log('timer cleared')
-
+    if (gameTimerValue === 5) {
+      const intervalId = setInterval(async () => {
+        // if (gameStates[code] !== undefined) {
+        //   paused = gameStates[code].isPaused
+        // } else {
         //   clearInterval(intervalId)
         // }
+        eventEmitter.on('destroyTimer', () => {
+          eventDestroyTimer(intervalId)
+          eventEmitter.removeListener('destroyTimer', eventDestroyTimer)
+          eventEmitter.removeListener(
+            'changeleaderSocket',
+            eventChangeLeaderSocket
+          )
+          eventEmitter.removeListener(
+            'changeTwoPlayersOnly',
+            eventChangeTwoPlayersOnly
+          )
+          return
+        })
 
-        if (gameTimerValue < 0 && gamePhase === 1) {
-          // await Sessions.update(
-          //   { inRound: false },
-          //   { where: { inGame: false } }
-          // )
-          // await Sessions.update({ inRound: true }, { where: { inGame: true } })
+        // console.log(gameStates)
+        if (!paused) {
+          // console.log(io.sockets.adapter.rooms.get(code))
+
+          if (isThereOnlyTwoPlayers) {
+            io.to(code).emit('thereOnlyTwoPlayers')
+            console.log(paused, !paused)
+            console.log(
+              'thereOnlyTwoPlayers Server Server Server Server Server Server'
+            )
+            paused = true
+            io.to(code).emit('changePause', paused)
+            await Lobby.update(
+              { isPaused: paused },
+              { where: { lobbyCode: code } }
+            )
+            gameTimerValue += 1
+          }
+
+          // if (
+          //   gamePhase === 1 &&
+          //   gameTimerValue === timeForFirstPhase &&
+          //   isThereOnlyTwoPlayers
+          // ) {
+          //   io.to(code).emit('thereOnlyTwoPlayers')
+          //   console.log(paused, !paused)
+          //   console.log(
+          //     'thereOnlyTwoPlayers Server Server Server Server Server Server'
+          //   )
+          //   paused = true
+          //   io.to(code).emit('changePause', paused)
+          //   await Lobby.update(
+          //     { isPaused: paused },
+          //     { where: { lobbyCode: code } }
+          //   )
+          // }
+
+          gameTimerValue -= 1
 
           // const lobbyCountOfPlayers = (
           //   await Sessions.findAll({ where: { lobbyCode: code } })
           // ).length
-          // console.log(lobbyCountOfPlayers, 'aaaaaaaaaaaaaa count')
           // if (lobbyCountOfPlayers === 0) {
-          //   await Lobby.destroy({ where: { lobbyCode: code } })
+          // await Lobby.destroy({ where: { lobbyCode: code } })
+          // console.log('timer cleared')
 
-          //   console.log('timer cleared')
           //   clearInterval(intervalId)
           // }
 
-          countOfQuestions = await Sessions.count({
-            where: { lobbyCode: code, inRound: true },
-          })
+          if (gameTimerValue < 0 && gamePhase === 1) {
+            // await Sessions.update(
+            //   { inRound: false },
+            //   { where: { inGame: false } }
+            // )
+            // await Sessions.update({ inRound: true }, { where: { inGame: true } })
 
-          await Sessions.update(
-            {
-              number: null,
-              question: null,
-              firstAnswer: null,
-              secondAnswer: null,
-            },
-            { where: { lobbyCode: code } }
-          )
+            // const lobbyCountOfPlayers = (
+            //   await Sessions.findAll({ where: { lobbyCode: code } })
+            // ).length
+            // console.log(lobbyCountOfPlayers, 'aaaaaaaaaaaaaa count')
+            // if (lobbyCountOfPlayers === 0) {
+            //   await Lobby.destroy({ where: { lobbyCode: code } })
 
-          gameTimerValue = timeForSecondPhase
-          gamePhase = 2
-          waiting = true ///////
-        }
-        if (gameTimerValue < 0 && gamePhase === 2) {
-          await Sessions.update(
-            { inRound: false },
-            { where: { inGame: false } }
-          )
-          await Sessions.update({ inRound: true }, { where: { inGame: true } })
+            //   console.log('timer cleared')
+            //   clearInterval(intervalId)
+            // }
 
-          setNumbers(code)
-          gameTimerValue = timeForThirdPhase
-          gamePhase = 3
-          waiting = true ///////
-        }
+            // countOfQuestions = await Sessions.count({
+            //   where: { lobbyCode: code, inRound: true },
+            // })///////////////////////aaaaaaaaaaa////////////////////////////////
 
-        if (gameTimerValue < 0 && gamePhase === 3) {
-          gameTimerValue = timeForFourthPhase
-          gamePhase = 4
-          waiting = true ///////
-        }
-
-        if (gameTimerValue < 0 && gamePhase === 4) {
-          gameTimerValue = timeForFifthPhase
-          gamePhase = 5
-        }
-
-        if (gameTimerValue === timeForFifthPhase && gamePhase === 5) {
-          // const arrOfVotes = await getArrOfVotes(code)
-          const countOfFirstVote = await Sessions.count({
-            where: { lobbyCode: code, voteNumber: 1 },
-          })
-          const countOfSecondVote = await Sessions.count({
-            where: { lobbyCode: code, voteNumber: 2 },
-          })
-          const usersInLobby = (
-            await Sessions.findAll({
-              where: { lobbyCode: code, inRound: true },
-            })
-          ).length
-
-          const firstAnswerNumber =
-            newNumberOfQuestion - 2 <= 0
-              ? usersInLobby - Math.abs(newNumberOfQuestion - 2)
-              : newNumberOfQuestion - 2
-
-          const secondAnswerNumber =
-            newNumberOfQuestion - 1 <= 0
-              ? usersInLobby - Math.abs(newNumberOfQuestion - 1)
-              : newNumberOfQuestion - 1
-
-          const firstUserScore =
-            (await Sessions.findOne({
-              where: { lobbyCode: code, number: firstAnswerNumber },
-            }).then((user) => user?.score)) || 0
-          const secondUserScore =
-            (await Sessions.findOne({
-              where: { lobbyCode: code, number: secondAnswerNumber },
-            }).then((user) => user?.score)) || 0
-
-          const scoresForFirstPlayer =
-            firstUserScore + countOfFirstVote * 100 * roundNumber
-
-          const scoresForSecondPlayer =
-            secondUserScore + countOfSecondVote * 100 * roundNumber
-
-          await Sessions.update(
-            { score: scoresForFirstPlayer },
-            { where: { lobbyCode: code, number: firstAnswerNumber } }
-          )
-          await Sessions.update(
-            { score: scoresForSecondPlayer },
-            { where: { lobbyCode: code, number: secondAnswerNumber } }
-          )
-        }
-
-        if (gameTimerValue < 0 && gamePhase === 5) {
-          await Sessions.update(
-            { voteNumber: null },
-            { where: { lobbyCode: code } }
-          )
-          if (
-            newNumberOfQuestion === countOfQuestions &&
-            roundNumber === countOfRounds
-          ) {
-            gameTimerValue = timeForFirstPhase
-            gamePhase = 1
-            console.log('timer cleared Game ended')
-            io.to(code).emit('gameEnded')
-            clearInterval(intervalId)
-            eventEmitter.removeListener('destroyTimer', eventDestroyTimer)
-            eventEmitter.removeListener(
-              'changeleaderSocket',
-              eventChangeLeaderSocket
-            )
-            eventEmitter.removeListener(
-              'changeTwoPlayersOnly',
-              eventChangeTwoPlayersOnly
+            await Sessions.update(
+              {
+                number: null,
+                question: null,
+                firstAnswer: null,
+                secondAnswer: null,
+              },
+              { where: { lobbyCode: code } }
             )
 
-            io.to(code).emit('gameTimerUpdate', {
-              gameTimerValue,
-              gamePhase,
-
-              newNumberOfQuestion,
-            })
-            await Lobby.destroy({ where: { lobbyCode: code } })
-            return
-
-            // socket.off('togglePause', handleTogglePause)
-            // socket.off('askAboutPause', handleAskAboutPause)
-            return
-          } else if (
-            newNumberOfQuestion < countOfQuestions &&
-            roundNumber <= countOfRounds
-          ) {
-            gameTimerValue = timeForFourthPhase
-            gamePhase = 4
-          } else if (
-            newNumberOfQuestion === countOfQuestions &&
-            roundNumber <= countOfRounds
-          ) {
-            roundNumber++
-            gameTimerValue = timeForFirstPhase
-            gamePhase = 1
-            newNumberOfQuestion = 0
+            gameTimerValue = timeForSecondPhase
+            gamePhase = 2
             waiting = true ///////
           }
-        }
-        if (gameTimerValue === timeForFourthPhase && gamePhase === 4) {
-          newNumberOfQuestion++
-          await Lobby.update(
-            { numberOfQuestion: newNumberOfQuestion },
-            { where: { lobbyCode: code } }
+          if (gameTimerValue < 0 && gamePhase === 2) {
+            await Sessions.update(
+              { inRound: false },
+              { where: { inGame: false } }
+            )
+            countOfQuestions = await Sessions.count({
+              where: { lobbyCode: code, inRound: true },
+            })
+            await Sessions.update(
+              { inRound: true },
+              { where: { inGame: true } }
+            )
+
+            setNumbers(code)
+            gameTimerValue = timeForThirdPhase
+            gamePhase = 3
+            waiting = true ///////
+          }
+
+          if (gameTimerValue < 0 && gamePhase === 3) {
+            gameTimerValue = timeForFourthPhase
+            gamePhase = 4
+            waiting = true ///////
+          }
+
+          if (gameTimerValue < 0 && gamePhase === 4) {
+            gameTimerValue = timeForFifthPhase
+            gamePhase = 5
+          }
+
+          if (gameTimerValue === timeForFifthPhase && gamePhase === 5) {
+            // const arrOfVotes = await getArrOfVotes(code)
+            const countOfFirstVote = await Sessions.count({
+              where: { lobbyCode: code, voteNumber: 1 },
+            })
+            const countOfSecondVote = await Sessions.count({
+              where: { lobbyCode: code, voteNumber: 2 },
+            })
+            const usersInLobby = (
+              await Sessions.findAll({
+                where: { lobbyCode: code, inRound: true },
+              })
+            ).length
+
+            const firstAnswerNumber =
+              newNumberOfQuestion - 2 <= 0
+                ? usersInLobby - Math.abs(newNumberOfQuestion - 2)
+                : newNumberOfQuestion - 2
+
+            const secondAnswerNumber =
+              newNumberOfQuestion - 1 <= 0
+                ? usersInLobby - Math.abs(newNumberOfQuestion - 1)
+                : newNumberOfQuestion - 1
+
+            const firstUserScore =
+              (await Sessions.findOne({
+                where: { lobbyCode: code, number: firstAnswerNumber },
+              }).then((user) => user?.score)) || 0
+            const secondUserScore =
+              (await Sessions.findOne({
+                where: { lobbyCode: code, number: secondAnswerNumber },
+              }).then((user) => user?.score)) || 0
+
+            const scoresForFirstPlayer =
+              firstUserScore + countOfFirstVote * 100 * roundNumber
+
+            const scoresForSecondPlayer =
+              secondUserScore + countOfSecondVote * 100 * roundNumber
+
+            await Sessions.update(
+              { score: scoresForFirstPlayer },
+              { where: { lobbyCode: code, number: firstAnswerNumber } }
+            )
+            await Sessions.update(
+              { score: scoresForSecondPlayer },
+              { where: { lobbyCode: code, number: secondAnswerNumber } }
+            )
+          }
+
+          if (gameTimerValue < 0 && gamePhase === 5) {
+            await Sessions.update(
+              { voteNumber: null },
+              { where: { lobbyCode: code } }
+            )
+            if (
+              newNumberOfQuestion === countOfQuestions &&
+              roundNumber === countOfRounds
+            ) {
+              gameTimerValue = timeForFirstPhase
+              gamePhase = 1
+              console.log('timer cleared Game ended')
+              io.to(code).emit('gameEnded')
+              clearInterval(intervalId)
+              eventEmitter.removeListener('destroyTimer', eventDestroyTimer)
+              eventEmitter.removeListener(
+                'changeleaderSocket',
+                eventChangeLeaderSocket
+              )
+              eventEmitter.removeListener(
+                'changeTwoPlayersOnly',
+                eventChangeTwoPlayersOnly
+              )
+
+              io.to(code).emit('gameTimerUpdate', {
+                gameTimerValue,
+                gamePhase,
+
+                newNumberOfQuestion,
+              })
+              await Lobby.destroy({ where: { lobbyCode: code } })
+              return
+
+              // socket.off('togglePause', handleTogglePause)
+              // socket.off('askAboutPause', handleAskAboutPause)
+              return
+            } else if (
+              newNumberOfQuestion < countOfQuestions &&
+              roundNumber <= countOfRounds
+            ) {
+              gameTimerValue = timeForFourthPhase
+              gamePhase = 4
+            } else if (
+              newNumberOfQuestion === countOfQuestions &&
+              roundNumber <= countOfRounds
+            ) {
+              roundNumber++
+              gameTimerValue = timeForFirstPhase
+              gamePhase = 1
+              newNumberOfQuestion = 0
+              waiting = true ///////
+            }
+          }
+          if (gameTimerValue === timeForFourthPhase && gamePhase === 4) {
+            newNumberOfQuestion++
+            await Lobby.update(
+              { numberOfQuestion: newNumberOfQuestion },
+              { where: { lobbyCode: code } }
+            )
+            // console.log('numberOfQuestion changed!')
+            // setTimeout(() => {}, 1000)
+            // io.to(code).emit('getNewNumberOfquestion', newNumberOfQuestion)
+          }
+          if (waiting === true) {
+            if (nextGamsePhase === 0 && nextGameTimerValue === 0) {
+              nextGamsePhase = gamePhase
+              nextGameTimerValue = gameTimerValue
+              // gamePhase = 0
+              gamePhase = gamePhase * -10
+              gameTimerValue = waitingTime
+            }
+
+            if (gameTimerValue === 0) {
+              waiting = false
+              gamePhase = nextGamsePhase
+              gameTimerValue = nextGameTimerValue
+              nextGamsePhase = 0
+              nextGameTimerValue = 0
+            }
+          }
+
+          console.log(
+            'time ticking',
+            gameTimerValue,
+            'number of question',
+            newNumberOfQuestion,
+            'game phase',
+            gamePhase,
+            'round now',
+            roundNumber,
+            'count of rounds',
+            countOfRounds
           )
-          // console.log('numberOfQuestion changed!')
-          // setTimeout(() => {}, 1000)
-          // io.to(code).emit('getNewNumberOfquestion', newNumberOfQuestion)
+          io.to(code).emit('gameTimerUpdate', {
+            gameTimerValue,
+            gamePhase,
+            // paused,
+            newNumberOfQuestion,
+          }) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
+        } else {
+          io.to(code).emit('gameTimerUpdate', {
+            gameTimerValue,
+            gamePhase,
+
+            newNumberOfQuestion,
+          })
         }
-        if (waiting === true) {
-          if (nextGamsePhase === 0 && nextGameTimerValue === 0) {
-            nextGamsePhase = gamePhase
-            nextGameTimerValue = gameTimerValue
-            // gamePhase = 0
-            gamePhase = gamePhase * -10
-            gameTimerValue = waitingTime
-          }
-
-          if (gameTimerValue === 0) {
-            waiting = false
-            gamePhase = nextGamsePhase
-            gameTimerValue = nextGameTimerValue
-            nextGamsePhase = 0
-            nextGameTimerValue = 0
-          }
-        }
-
-        console.log(
-          'time ticking',
-          gameTimerValue,
-          'number of question',
-          newNumberOfQuestion,
-          'game phase',
-          gamePhase,
-          'round now',
-          roundNumber,
-          'count of rounds',
-          countOfRounds
-        )
-        io.to(code).emit('gameTimerUpdate', {
-          gameTimerValue,
-          gamePhase,
-          // paused,
-          newNumberOfQuestion,
-        }) // если socket.emit - то обновления у одного человека, если io - то во всех лобби :-)
-      } else {
-        io.to(code).emit('gameTimerUpdate', {
-          gameTimerValue,
-          gamePhase,
-
-          newNumberOfQuestion,
-        })
-      }
-    }, 1000)
+      }, 1000)
+    }
+  } catch (e) {
+    console.log(
+      e,
+      'game error game error game error game error game error game error '
+    )
   }
 }
 
@@ -528,6 +558,14 @@ export const getStragersQuestion = async (socket: any, [code, number]: any) => {
     const canVote =
       user?.number !== firstUserNumber && user?.number !== secondUserNumber
 
+    console.log(
+      number,
+      firstUserNumber,
+      secondUserNumber,
+      countOfUsers,
+      'number,number,number,number,number,number,number'
+    )
+
     const ownerOfQuestion = await User.findOne({
       include: {
         model: Sessions,
@@ -542,6 +580,13 @@ export const getStragersQuestion = async (socket: any, [code, number]: any) => {
 
     // const question = userForQuestion.question
     // const ownerOfQuestion = userForNick?.nick
+
+    console.log(
+      number,
+      firstUserNumber,
+      countOfUsers,
+      'firstUserNumber firstUserNumber firstUserNumber firstUserNumber'
+    )
 
     const firstStrangersNick = await User.findOne({
       include: {
@@ -561,6 +606,13 @@ export const getStragersQuestion = async (socket: any, [code, number]: any) => {
 
     // const firstStrangerAnswer = userForFirstStrangerAnswer?.secondAnswer
     // const firstStrangersNick = userForFirstStrangerAnswer?.nick
+
+    console.log(
+      number,
+      secondUserNumber,
+      countOfUsers,
+      'secondUserNumber secondUserNumber secondUserNumber secondUserNumber secondUserNumber'
+    )
 
     const secondStrangerNick = await User.findOne({
       include: {

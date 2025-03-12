@@ -19,7 +19,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
   const [players, setPlayers] = useState<string[]>([])
   const [lobbyLeader, setLobbyLeader] = useState<boolean>(false)
-  const [timer, setTimer] = useState<number>(6)
+  const [timer, setTimer] = useState<number>(5)
   const [isGameStarted, setIsGameStarted] = useState<boolean>(false)
   const [maxPlayers, setMaxPlayers] = useState<number>(0)
   const [timerStarted, setTimerStarted] = useState<boolean>(false)
@@ -165,7 +165,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
   if (loadingData) {
     return (
       <div className={style.loading}>
-        <p className={style.loading_text}>Создаем комнату</p>
+        <p className={style.loading_text}>Подключение к комнате</p>
         <div className={style.loading_dots}>
           <ul className={style.dots_row}>
             <li className={style.dot}></li>

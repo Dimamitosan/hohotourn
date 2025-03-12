@@ -113,10 +113,14 @@ export const disconnect = async (socket: any) => {
       where: { lobbyCode: code, inGame: true },
     })
 
-    await Lobby.update(
-      { countOfPlayers: countOfPlayersInLobbyNow },
-      { where: { lobbyCode: code } }
-    )
+    try {
+      await Lobby.update(
+        { countOfPlayers: countOfPlayersInLobbyNow },
+        { where: { lobbyCode: code } }
+      )
+    } catch (e) {
+      console.log(e)
+    }
 
     const playersInLobby = await User.findAll({
       include: {
@@ -132,6 +136,10 @@ export const disconnect = async (socket: any) => {
 
     console.log(isLeader, arrOfNicks.length > 0, 'aaaaaa')
 
+    const isLobbyExists = await Lobby.findOne({
+      where: { lobbyCode: code },
+    })
+
     if (isLeader && arrOfNicks.length > 0) {
       console.log(isLeader, arrOfNicks.length > 0, 'qqqqqq')
       const randomSession = await Sessions.findOne({
@@ -142,23 +150,20 @@ export const disconnect = async (socket: any) => {
         where: { id: randomSession!.userId },
       })
 
-      if (randomUser!.socket) {
+      if (randomUser!.socket && isLobbyExists) {
         const randomSocket = io.sockets.sockets.get(randomUser!.socket)
         eventEmitter.emit('changeleaderSocket', randomSocket) // qweqweqweqwd09ufs0aufasuf90sauf90asuf0sa90fas90fsaf90sua9f0asu
         socket.to(randomUser!.socket).emit('setLeader', true) //randomUser!.socket
-        console.log(randomUser!.socket, 'vvvvvvvvv') //randomSocket
       }
-
-      console.log(randomUser!.socket, 'ggggggggggg')
 
       await quitSession!.update({
         lobbyLeader: false,
       })
     }
 
-    //await Lobby.findOne({
-    //   where: { lobbyCode: code },
-    // }).then((lobby) => lobby!.countOfPlayers === 0)
+    if (!isLobbyExists) {
+      await Sessions.destroy({ where: { lobbyCode: code } })
+    }
 
     if (arrOfNicks.length === 0 && code) {
       eventEmitter.emit('destroyTimer')
