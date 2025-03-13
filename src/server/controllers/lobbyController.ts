@@ -42,6 +42,7 @@ export const createLobby = async (
         inGame: true,
         inRound: true,
         score: 0,
+        isReady: false,
       })
     } catch (e) {
       console.log('lobby err')

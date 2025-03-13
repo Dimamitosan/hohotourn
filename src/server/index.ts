@@ -28,6 +28,7 @@ import {
   askNewNumberOfquestion,
   askArrOfVotes,
   askGameStarted,
+  isReady,
 } from './controllers/gameControllers'
 import { joinLobby, checkLobbyIsFull } from './controllers/joinControllers'
 import {
@@ -128,6 +129,10 @@ io.on('connection', (socket) => {
 
   socket.on('findLobbyLeader', (code: string) => {
     findLobbyLeader(socket, code)
+  })
+
+  socket.on('isReady', (code: string) => {
+    isReady(socket, code)
   })
 
   socket.on('askGameExists', (code: string) => {

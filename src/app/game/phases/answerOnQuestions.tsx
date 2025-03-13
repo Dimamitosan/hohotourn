@@ -53,6 +53,12 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
     }
   }, [phase, seconds])
 
+  const handleReady = () => {
+    setSecondAnswerIsReady(true)
+    socket.emit('sendAnswers', [firstAnswer, secondAnswer])
+    socket.emit('isReady', code)
+  }
+
   return (
     <div className={style.content}>
       {!firstAnswerIsReady ? (
@@ -111,9 +117,7 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
                 secondAnswerIsReady ? style.disabled : null
               }`}
               disabled={secondAnswerIsReady}
-              onClick={() => {
-                setSecondAnswerIsReady(true)
-              }}
+              onClick={handleReady}
             >
               <FontAwesomeIcon icon={faCheck} />
             </button>

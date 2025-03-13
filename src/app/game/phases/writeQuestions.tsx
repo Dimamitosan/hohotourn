@@ -11,6 +11,7 @@ interface Props {
 }
 const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   const [question, setQuestion] = useState<string>('')
+  const [isReady, setIsReady] = useState<boolean>(false)
 
   const [canGetRandomQuestion, setCanGetRandomQuestion] =
     useState<boolean>(true)
@@ -25,7 +26,7 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
   }, [])
 
   useEffect(() => {
-    if (phase === 2 && seconds <= 2) {
+    if (phase === 2 && seconds <= 2 && !isReady) {
       socket.emit('sendQuestion', question)
     }
 
@@ -49,6 +50,12 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
     socket.emit('requestRandomQuestion', code)
   }
 
+  const handleReady = () => {
+    setIsReady(true)
+    socket.emit('sendQuestion', question)
+    socket.emit('isReady', code)
+  }
+
   return (
     <div className={style.content}>
       <input
@@ -62,15 +69,24 @@ const WriteQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
         }}
       />
 
-      <button
-        disabled={!canGetRandomQuestion}
-        className={`${style.randomQuestion} ${
-          canGetRandomQuestion ? null : style.disabled
-        }`}
-        onClick={getRandomQuestion}
-      >
-        Случайный вопрос
-      </button>
+      <div className={style.rowOfButtons}>
+        <button
+          disabled={!canGetRandomQuestion}
+          className={`${style.randomQuestion} ${
+            canGetRandomQuestion ? null : style.disabled
+          }`}
+          onClick={getRandomQuestion}
+        >
+          Случайный вопрос
+        </button>
+        <button
+          disabled={isReady}
+          className={`${style.readyButton} ${!isReady ? null : style.disabled}`}
+          onClick={handleReady}
+        >
+          Отправить
+        </button>
+      </div>
     </div>
   )
 }

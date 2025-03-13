@@ -7,6 +7,7 @@ import Lobby from '@/models/Lobby'
 import arrOfQuestions from '../questions'
 
 import { eventEmitter } from '../index'
+import { use } from 'react'
 //
 export const findLobbyLeader = async (socket: any, code: string) => {
   // const ll = await User.findOne({ where: { socket: socket.id } }).then(
@@ -44,6 +45,47 @@ export const deleteSession = async (socket: any, code: string) => {
   // await Sessions.destroy({ where: { lobbyCode: code, userId: userId } })
 
   await Sessions.destroy({ where: { lobbyCode: code } })
+}
+
+export const isReady = async (socket: any, code: string) => {
+  const player = await User.findOne({ where: { socket: socket.id } })
+
+  await Sessions.update(
+    { isReady: true },
+    { where: { userId: player!.id, lobbyCode: code } }
+  )
+
+  const coundOfReady = await Sessions.count({
+    where: { lobbyCode: code, isReady: true },
+  })
+
+  const counOfPlaying = await Sessions.count({
+    where: { inGame: true, inRound: true },
+  })
+
+  const socketOfLeader = await User.findOne({
+    include: [
+      {
+        model: Sessions,
+        as: 'Sessions',
+        where: { lobbyCode: code, lobbyLeader: true },
+      },
+    ],
+  }).then((user) => user!.socket)
+
+  console.log(
+    'user is ready    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    coundOfReady,
+    counOfPlaying
+  )
+
+  if (coundOfReady === counOfPlaying) {
+    console.log(
+      socketOfLeader,
+      'emmiting to leader aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    )
+    io.to(code).emit('allPlayersIsReady') //socket.to(socketOfLeader).emit('allPlayersIsReady')
+  }
 }
 
 export const askArrOfVotes = async (socket: any, code: any) => {
@@ -126,12 +168,12 @@ export const startGameTimer = async (socket: any, code: string) => {
     let waiting = false
     let nextGamsePhase = 0
     let nextGameTimerValue = 0
-    const timeForFirstPhase = 1 //5
-    const timeForSecondPhase = 1 //60 10
-    const timeForThirdPhase = 1 //90 10
-    const timeForFourthPhase = 1 //15
-    const timeForFifthPhase = 1 //10
-    const waitingTime = 1 //10
+    const timeForFirstPhase = 5 //5
+    const timeForSecondPhase = 10 //60 10
+    const timeForThirdPhase = 10 //90 10
+    const timeForFourthPhase = 15 //15
+    const timeForFifthPhase = 10 //10
+    const waitingTime = 10 //10
     let isThereOnlyTwoPlayers = false
 
     let countOfQuestions = 0
@@ -163,6 +205,11 @@ export const startGameTimer = async (socket: any, code: string) => {
 
     eventEmitter.on('changeTwoPlayersOnly', (isPlayersNotALot) => {
       eventChangeTwoPlayersOnly(isPlayersNotALot)
+    })
+
+    socket.on('skipPhase', async (code: string) => {
+      gameTimerValue = 0
+      await Sessions.update({ isReady: false }, { where: { lobbyCode: code } })
     })
 
     const handleTogglePause = async (code: string) => {

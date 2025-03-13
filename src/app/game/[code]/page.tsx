@@ -59,6 +59,27 @@ const Game: React.FC<LobbyProps> = ({ params }) => {
     setPopups(popups.filter((popup) => popup.id !== id))
   }
 
+  // useEffect(() => {
+  //   socket.on('allPlayersIsReady', () => {
+  //     console.log('ssssssssssssssssssss')
+  //   })
+  // }, socket)
+
+  useEffect(() => {
+    console.log(
+      'aaaaaaaaaaaaaaaaaaaaaa allPlayersIsReady allPlayersIsReady allPlayersIsReady allPlayersIsReady',
+      isLeaderSet,
+      lobbyLeader
+    )
+
+    socket.on('allPlayersIsReady', () => {
+      console.log(isLeaderSet && lobbyLeader, 'wwwwwwww')
+      if (isLeaderSet && lobbyLeader) {
+        socket.emit('skipPhase', code)
+      }
+    })
+  }, [isLeaderSet, lobbyLeader, socket])
+
   useEffect(() => {
     socket.on('disconnect', () => {
       router.push(`/`)

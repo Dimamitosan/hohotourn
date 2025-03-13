@@ -29,6 +29,7 @@ export const joinLobby = async (socket: any, code: string) => {
           score: 0,
           inGame: true,
           inRound: true,
+          isReady: false,
         })
       } catch (e) {
         console.log('join control err')

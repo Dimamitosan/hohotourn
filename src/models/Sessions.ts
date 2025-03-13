@@ -15,6 +15,7 @@ interface SessionsAttributes {
   firstAnswer?: string | null
   secondAnswer?: string | null
   voteNumber?: number | null
+  isReady?: boolean | null
 }
 
 interface SessionsCreationAttributes
@@ -33,6 +34,7 @@ class Sessions extends Model implements SessionsAttributes {
   public firstAnswer?: string | null
   public secondAnswer?: string | null
   public voteNumber?: number | null
+  public isReady?: boolean | null
 }
 
 Sessions.init(
@@ -92,6 +94,10 @@ Sessions.init(
     },
     voteNumber: {
       type: DataTypes.NUMBER,
+      allowNull: true,
+    },
+    isReady: {
+      type: DataTypes.BOOLEAN,
       allowNull: true,
     },
   },
