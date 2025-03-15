@@ -60,7 +60,7 @@ export const isReady = async (socket: any, code: string) => {
   })
 
   const counOfPlaying = await Sessions.count({
-    where: { inGame: true, inRound: true },
+    where: { inGame: true, inRound: true, lobbyCode: code },
   })
 
   const socketOfLeader = await User.findOne({
@@ -199,11 +199,11 @@ export const startGameTimer = async (socket: any, code: string) => {
       clearInterval(intervalId)
     }
 
-    eventEmitter.on('changeleaderSocket', (socket) =>
+    eventEmitter.on('changeleaderSocket' + code, (socket) =>
       eventChangeLeaderSocket(socket)
     )
 
-    eventEmitter.on('changeTwoPlayersOnly', (isPlayersNotALot) => {
+    eventEmitter.on('changeTwoPlayersOnly' + code, (isPlayersNotALot) => {
       eventChangeTwoPlayersOnly(isPlayersNotALot)
     })
 
@@ -263,7 +263,7 @@ export const startGameTimer = async (socket: any, code: string) => {
         // } else {
         //   clearInterval(intervalId)
         // }
-        eventEmitter.on('destroyTimer', () => {
+        eventEmitter.on('destroyTimer' + code, () => {
           eventDestroyTimer(intervalId)
           eventEmitter.removeListener('destroyTimer', eventDestroyTimer)
           eventEmitter.removeListener(
@@ -510,7 +510,7 @@ export const startGameTimer = async (socket: any, code: string) => {
               nextGameTimerValue = gameTimerValue
               // gamePhase = 0
               gamePhase = gamePhase * -10
-              gameTimerValue = waitingTime
+              gameTimerValue = gamePhase === -10 ? 5 : waitingTime
             }
 
             if (gameTimerValue === 0) {

@@ -21,6 +21,13 @@ export const joinLobby = async (socket: any, code: string) => {
     //user!.nick
 
     if (!(await Sessions.findOne({ where: { userId, lobbyCode: code } }))) {
+      console.log(
+        'User ',
+        userId,
+        ' created in lobby ',
+        code,
+        'aaaaaaaaaaaaaaaaa'
+      )
       try {
         await Sessions.create({
           userId,
@@ -78,7 +85,7 @@ export const joinLobby = async (socket: any, code: string) => {
     })
     const arrOfNicks = playersInLobby.map((user) => user.nick)
     if (arrOfNicks.length === 3) {
-      eventEmitter.emit('changeTwoPlayersOnly')
+      eventEmitter.emit('changeTwoPlayersOnly' + code)
     }
     console.log(arrOfNicks)
 

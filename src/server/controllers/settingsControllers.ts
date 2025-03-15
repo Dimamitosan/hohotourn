@@ -152,7 +152,7 @@ export const disconnect = async (socket: any) => {
 
       if (randomUser!.socket && isLobbyExists) {
         const randomSocket = io.sockets.sockets.get(randomUser!.socket)
-        eventEmitter.emit('changeleaderSocket', randomSocket) // qweqweqweqwd09ufs0aufasuf90sauf90asuf0sa90fas90fsaf90sua9f0asu
+        eventEmitter.emit('changeleaderSocket' + code, randomSocket) // qweqweqweqwd09ufs0aufasuf90sauf90asuf0sa90fas90fsaf90sua9f0asu
         socket.to(randomUser!.socket).emit('setLeader', true) //randomUser!.socket
       }
 
@@ -166,13 +166,13 @@ export const disconnect = async (socket: any) => {
     }
 
     if (arrOfNicks.length === 0 && code) {
-      eventEmitter.emit('destroyTimer')
+      eventEmitter.emit('destroyTimer' + code)
       console.log('destroyTimer!!!!')
       await Lobby.destroy({ where: { lobbyCode: code } })
       await Sessions.destroy({ where: { lobbyCode: code } })
     } else if (arrOfNicks.length === 2) {
       console.log('2 players only')
-      eventEmitter.emit('changeTwoPlayersOnly', true) //////
+      eventEmitter.emit('changeTwoPlayersOnly' + code, true) //////
     } else {
       if (code) {
         io.to(code).emit('updatePlayers', arrOfNicks)

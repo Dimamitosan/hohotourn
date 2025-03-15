@@ -61,9 +61,11 @@ const AnswerOnQuestions: React.FC<Props> = ({ code, seconds, phase }) => {
 
   return (
     <div className={style.content}>
+      <p className={!firstAnswerIsReady ? style.hurryUp : style.hidden}>
+        Поторопись, тебя ждет второй вопрос!
+      </p>
       {!firstAnswerIsReady ? (
         <>
-          <p className={style.hurryUp}>Поторопись, тебя ждет второй вопрос!</p>
           <div className={style.question}>
             <p>{firstQuestion}</p>
           </div>
