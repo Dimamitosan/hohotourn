@@ -90,15 +90,26 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
         })
       } catch (e) {}
 
-      const handleUpdatePlayers = (newPlayers: string[]) => {
-        setPlayers(newPlayers)
-      }
+      // const handleUpdatePlayers = (newPlayers: string[]) => {
+      //   setPlayers(newPlayers)
+      // }
 
       socket.on('setLeader', (leader: boolean) => {
         setLobbyLeader(leader)
       })
 
-      socket.on('updatePlayers', handleUpdatePlayers)
+      socket.on('updatePlayers', (newPlayers: string[]) => {
+        setPlayers(newPlayers)
+        console.log('updating players', newPlayers)
+
+        console.log(timerStarted, newPlayers.length < 3, 'qqqq', timer)
+
+        if (timerStarted && newPlayers.length < 3) {
+          console.log('wwwww')
+          setTimer(5)
+          socket.emit('toggleStart', code)
+        }
+      })
 
       socket.on('startGame', () => {
         setIsGameStarted(true)
@@ -110,10 +121,10 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
         socket.off('startGame')
         socket.off('setLeader')
         socket.off('updateLobbyInfo')
-        socket.off('updatePlayers', handleUpdatePlayers)
+        // socket.off('updatePlayers', handleUpdatePlayers)
       }
     }
-  }, [socket, code, isGameStarted])
+  }, [socket, code, isGameStarted, timerStarted])
 
   useEffect(() => {
     let timer: any
@@ -149,7 +160,7 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
 
       socket.emit('startTimer', code)
     } else {
-      setTimer(6)
+      setTimer(5)
       socket.emit('toggleStart', code)
     }
   }
@@ -213,13 +224,17 @@ const Lobby: React.FC<LobbyProps> = ({ params }) => {
         {lobbyLeader ? (
           canLeave ? (
             <button
-              disabled={!isButtonEnabled}
+              disabled={players.length >= 3 ? !isButtonEnabled : true}
               className={`${style.button} ${
-                isButtonEnabled ? null : style.disabled
+                isButtonEnabled && players.length >= 3 ? null : style.disabled
               }`}
               onClick={handleStartGame}
             >
-              <p> Начать игру</p>
+              {players.length >= 3 ? (
+                <p>Начать игру</p>
+              ) : (
+                <p>Нужно минимум 3 игрока</p>
+              )}
             </button>
           ) : (
             <button

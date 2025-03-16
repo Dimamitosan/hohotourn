@@ -1,15 +1,14 @@
 .content {
   display: grid;
 }
-.hurryUp {
-  margin-bottom: 4vw;
-}
+
 .answerArea {
   width: 90vw;
   display: flex;
   margin-top: 5vw;
 }
 .question {
+  margin-top: 4vw;
   display: flex;
   justify-content: center; /* Горизонтальное центрирование */
   align-items: center;

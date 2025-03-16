@@ -202,6 +202,11 @@ export const startTimer = async (socket: any, code: string) => {
         console.log('Timer resumed')
       }
     })
+    socket.on('disconnect', () => {
+      clearInterval(intervalId!)
+      intervalId = null // Clear the reference
+      io.to(code).emit('cancelStart')
+    })
 
     if (!cancel) {
       timerValue--

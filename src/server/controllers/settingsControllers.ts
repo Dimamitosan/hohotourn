@@ -136,7 +136,7 @@ export const disconnect = async (socket: any) => {
 
     console.log(isLeader, arrOfNicks.length > 0, 'aaaaaa')
 
-    const isLobbyExists = await Lobby.findOne({
+    const lobby = await Lobby.findOne({
       where: { lobbyCode: code },
     })
 
@@ -150,7 +150,7 @@ export const disconnect = async (socket: any) => {
         where: { id: randomSession!.userId },
       })
 
-      if (randomUser!.socket && isLobbyExists) {
+      if (randomUser!.socket && lobby) {
         const randomSocket = io.sockets.sockets.get(randomUser!.socket)
         eventEmitter.emit('changeleaderSocket' + code, randomSocket) // qweqweqweqwd09ufs0aufasuf90sauf90asuf0sa90fas90fsaf90sua9f0asu
         socket.to(randomUser!.socket).emit('setLeader', true) //randomUser!.socket
@@ -161,7 +161,7 @@ export const disconnect = async (socket: any) => {
       })
     }
 
-    if (!isLobbyExists) {
+    if (!lobby) {
       await Sessions.destroy({ where: { lobbyCode: code } })
     }
 
@@ -170,9 +170,10 @@ export const disconnect = async (socket: any) => {
       console.log('destroyTimer!!!!')
       await Lobby.destroy({ where: { lobbyCode: code } })
       await Sessions.destroy({ where: { lobbyCode: code } })
-    } else if (arrOfNicks.length === 2) {
+    } else if (arrOfNicks.length === 2 && lobby!.gameStarted) {
       console.log('2 players only')
       eventEmitter.emit('changeTwoPlayersOnly' + code, true) //////
+      io.to(code).emit('updatePlayers', arrOfNicks)
     } else {
       if (code) {
         io.to(code).emit('updatePlayers', arrOfNicks)
