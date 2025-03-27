@@ -169,8 +169,8 @@ export const startGameTimer = async (socket: any, code: string) => {
     let nextGamsePhase = 0
     let nextGameTimerValue = 0
     const timeForFirstPhase = 5 //5
-    const timeForSecondPhase = 10 //60 10
-    const timeForThirdPhase = 10 //90 10
+    const timeForSecondPhase = 60 //60 10
+    const timeForThirdPhase = 90 //90 10
     const timeForFourthPhase = 15 //15
     const timeForFifthPhase = 10 //10
     const waitingTime = 10 //10
